@@ -87,14 +87,16 @@ class Commission(models.Model):
 @receiver(post_save, sender='deals.Deal')
 def create_commissions_on_deal_completion(sender, instance, created, **kwargs):
     """Auto-create commissions when deal is completed"""
+    from decimal import Decimal
+    
     if instance.status == 'completed' and not instance.commissions.exists():
         # Dealer commission (e.g., 5%)
         dealer_commission = Commission.objects.create(
             deal=instance,
             recipient=instance.dealer,
             commission_type='dealer',
-            percentage=5.00,
-            amount_cad=instance.agreed_price_cad * 0.05,
+            percentage=Decimal('5.00'),
+            amount_cad=instance.agreed_price_cad * Decimal('0.05'),
             status='pending'
         )
         
@@ -104,7 +106,7 @@ def create_commissions_on_deal_completion(sender, instance, created, **kwargs):
                 deal=instance,
                 recipient=instance.broker,
                 commission_type='broker',
-                percentage=3.00,
-                amount_cad=instance.agreed_price_cad * 0.03,
+                percentage=Decimal('3.00'),
+                amount_cad=instance.agreed_price_cad * Decimal('0.03'),
                 status='pending'
             )
