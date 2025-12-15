@@ -25,11 +25,18 @@ urlpatterns = [
     path('', home, name='home'),
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
+    
+    # Versioned API endpoints
+    path('api/v1/', include('api.v1.urls', namespace='api_v1')),
+    
+    # Legacy endpoints (deprecated - redirect to v1)
     path('api/accounts/', include('accounts.urls')),
     path('api/vehicles/', include('vehicles.urls')),
     path('api/deals/', include('deals.urls')),
     path('api/shipments/', include('shipments.urls')),
     path('api/commissions/', include('commissions.urls')),
+    
+    # Internationalization
     path('i18n/', include('django.conf.urls.i18n')),
 ]
 
