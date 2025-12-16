@@ -241,6 +241,6 @@ if SENTRY_DSN:
         environment=SENTRY_ENVIRONMENT,
         # Release tracking
         release=config('APP_VERSION', default='1.0.0'),
-        # Better error context
-        send_default_pii=False,  # Don't send PII by default (GDPR compliance)
+        # Include request headers and IP for users (PII data)
+        send_default_pii=True,
     )
