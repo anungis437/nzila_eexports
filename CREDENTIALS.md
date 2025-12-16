@@ -60,3 +60,60 @@ curl -X POST http://localhost:8000/api/accounts/login/ \
 ✅ JWT authentication configured
 ✅ Login endpoint active and tested
 ✅ Credentials verified and working
+
+## Third-Party Services
+
+### Sentry (Error Tracking & Monitoring)
+- **Sign up**: https://sentry.io/signup/
+- **Setup Guide**: [docs/monitoring/SENTRY_SETUP.md](docs/monitoring/SENTRY_SETUP.md)
+- **Quick Setup**: Run `./setup_sentry.sh`
+
+**Required Environment Variables**:
+```bash
+# Backend (.env)
+SENTRY_DSN=https://your-backend-dsn@sentry.io/project-id
+SENTRY_ENVIRONMENT=development
+APP_VERSION=1.0.0
+
+# Frontend (frontend/.env)
+VITE_SENTRY_DSN=https://your-frontend-dsn@sentry.io/project-id
+VITE_ENVIRONMENT=development
+```
+
+### Stripe (Payment Processing)
+**Required Environment Variables**:
+```bash
+# Backend (.env)
+STRIPE_PUBLIC_KEY=pk_test_your_public_key_here
+STRIPE_SECRET_KEY=sk_test_your_secret_key_here
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
+
+# Frontend (frontend/.env)
+VITE_STRIPE_PUBLIC_KEY=pk_test_your_stripe_publishable_key_here
+```
+
+### Twilio (SMS 2FA)
+**Required Environment Variables**:
+```bash
+# Backend (.env)
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=+1234567890
+```
+
+### AWS S3 (File Storage - Production)
+**Required Environment Variables**:
+```bash
+# Backend (.env)
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_STORAGE_BUCKET_NAME=your_bucket_name
+AWS_S3_REGION_NAME=us-east-1
+```
+
+## Notes
+- All credentials above are for **development only**
+- Production credentials should be stored securely in environment variables
+- Never commit `.env` files to version control
+- See `.env.example` files for complete configuration templates
+

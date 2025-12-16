@@ -33,6 +33,9 @@
 - [PRODUCTION_GUIDE.md](deployment/PRODUCTION_GUIDE.md) - Production setup
 - [CI_CD_GUIDE.md](deployment/CI_CD_GUIDE.md) - CI/CD pipeline
 
+### Monitoring & Observability
+- [SENTRY_SETUP.md](monitoring/SENTRY_SETUP.md) - Sentry error tracking configuration
+
 ### Security & Credentials
 - [CREDENTIALS.md](../CREDENTIALS.md) - API keys and credentials (not committed)
 - [PHASE1_SECURITY_REPORT.md](security/PHASE1_SECURITY_REPORT.md) - Security audit report
