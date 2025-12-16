@@ -202,21 +202,6 @@ jobs:
         echo "✅ Verifying production deployment"
         # Health checks
     
-    # Uncomment when Sentry is configured:
-    # - name: Create Sentry release
-    #   if: vars.SENTRY_ENABLED == 'true'
-    #   env:
-    #     SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-    #     SENTRY_ORG: ${{ vars.SENTRY_ORG }}
-    #     SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
-    #   run: |
-    #     echo "📊 Creating Sentry release"
-    #     # To enable: Add SENTRY_ENABLED='true' in repo Variables and SENTRY_AUTH_TOKEN in Secrets
-    #     # curl -sL https://sentry.io/get-cli/ | bash
-    #     # sentry-cli releases new "${{ github.ref_name }}"
-    #     # sentry-cli releases set-commits "${{ github.ref_name }}" --auto
-    #     # sentry-cli releases finalize "${{ github.ref_name }}"
-    
     - name: Notify team
       if: always()
       run: |
