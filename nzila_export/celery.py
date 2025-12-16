@@ -19,6 +19,10 @@ app.autodiscover_tasks()
 
 # Configure periodic tasks
 app.conf.beat_schedule = {
+    'update-exchange-rates-daily': {
+        'task': 'payments.tasks.update_exchange_rates',
+        'schedule': crontab(hour=0, minute=30),  # Run daily at 12:30 AM
+    },
     'check-stalled-deals-daily': {
         'task': 'deals.tasks.check_stalled_deals',
         'schedule': crontab(hour=9, minute=0),  # Run daily at 9 AM

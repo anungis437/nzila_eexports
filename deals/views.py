@@ -2,6 +2,8 @@ from rest_framework import viewsets, filters, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.core.mail import send_mail
+from django.conf import settings
 from .models import Lead, Deal, Document
 from .serializers import LeadSerializer, DealSerializer, DocumentSerializer
 
@@ -43,7 +45,7 @@ class DealViewSet(viewsets.ModelViewSet):
     serializer_class = DealSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['status', 'dealer', 'broker']
+    filterset_fields = ['status', 'dealer', 'broker', 'payment_status']
     ordering = ['-created_at']
     
     def get_queryset(self):
@@ -61,6 +63,14 @@ class DealViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(broker=user)
         
         return queryset
+    
+    def perform_create(self, serializer):
+        # Auto-set dealer from the vehicle
+        vehicle = serializer.validated_data.get('vehicle')
+        if vehicle and not serializer.validated_data.get('dealer'):
+            serializer.save(dealer=vehicle.dealer)
+        else:
+            serializer.save()
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -86,3 +96,47 @@ class DocumentViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(uploaded_by=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def share(self, request, pk=None):
+        """Share document via email"""
+        document = self.get_object()
+        email = request.data.get('email')
+        message = request.data.get('message', '')
+        
+        if not email:
+            return Response(
+                {'error': 'Email is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Send email with document link
+        subject = f'Nzila Export Hub - Document Shared: {document.get_document_type_display()}'
+        email_message = f"""
+        A document has been shared with you from Nzila Export Hub.
+        
+        Document Type: {document.get_document_type_display()}
+        Deal ID: {document.deal.id}
+        
+        {message}
+        
+        You can access the document through your Nzila Export Hub account.
+        
+        Best regards,
+        Nzila Export Hub Team
+        """
+        
+        try:
+            send_mail(
+                subject,
+                email_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            return Response({'success': True, 'message': 'Document shared successfully'})
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

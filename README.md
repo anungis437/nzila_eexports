@@ -1,21 +1,76 @@
 # Nzila Export Hub
 
-A comprehensive vehicle export platform connecting Canadian dealers with West African buyers.
+A comprehensive, enterprise-grade vehicle export platform connecting Canadian dealers with West African buyers. Built with Django REST Framework, React, and TypeScript.
 
 ## Overview
 
-Nzila Export Hub is a Django-based platform that manages the complete vehicle export pipeline, from lead generation to delivery. The system handles:
+Nzila Export Hub is a full-stack platform that manages the complete vehicle export pipeline with advanced payment processing, security features, and audit capabilities. The system handles:
 
-- **Lead-to-Deal Pipeline Management**: Track potential buyers from initial interest to completed sale
+- **Multi-Currency Payment System**: 33 currencies supported with Stripe integration
+- **Two-Factor Authentication**: TOTP and SMS-based 2FA for enhanced security
+- **Comprehensive Audit Trail**: Complete activity logging and security monitoring
+- **PDF Report Generation**: Professional invoices, receipts, and reports
+- **Lead-to-Deal Pipeline Management**: Track buyers from interest to completed sale
 - **Shipment Tracking**: Real-time tracking of vehicle shipments
 - **Document Verification**: Automated workflow for verifying export documents
-- **Commission Automation**: Automatic commission calculation and tracking for dealers and brokers
+- **Commission Automation**: Automatic commission calculation and tracking
 - **Multi-Role System**: Separate portals for admins, dealers, brokers, and buyers
-- **Bilingual Support**: Full English/French (EN/FR) interface for international trade
+- **Bilingual Support**: Full English/French (EN/FR) interface
 
-## Key Features
+## 🚀 Key Features
 
-### Automated Workflows
+### Phase 1: Payments & Security (Complete)
+
+#### Multi-Currency Payment System
+- **33 Currencies Supported**: USD, EUR, GBP, CAD + 29 African currencies
+- **Stripe Integration**: Secure payment processing with Stripe PaymentIntents
+- **Payment Methods**: Credit cards, bank transfers, mobile money
+- **Payment Tracking**: Complete history and status monitoring
+- **Refund Support**: Full and partial refunds with audit trail
+- **Currency Conversion**: Real-time currency conversion with exchange rates
+- **Invoice Generation**: Professional invoices with company branding
+
+#### Two-Factor Authentication (2FA)
+- **TOTP Support**: Time-based one-time passwords (Google Authenticator, Authy)
+- **SMS Backup**: SMS-based 2FA as fallback option
+- **Email Backup**: Email-based verification codes
+- **QR Code Setup**: Easy setup with QR code scanning
+- **Backup Codes**: Recovery codes for account access
+- **Enforce 2FA**: Admin can require 2FA for all users
+- **Session Management**: Secure session handling with 2FA
+
+### Phase 2: Audit Trail & Reports (Complete)
+
+#### Comprehensive Audit Trail
+- **5 Audit Models**: AuditLog, LoginHistory, DataChangeLog, SecurityEvent, APIAccessLog
+- **34 Action Types**: Track all user actions across the platform
+- **Automatic Logging**: Middleware-based automatic API request logging
+- **Security Monitoring**: Real-time detection of SQL injection, XSS, rate limits
+- **Login Tracking**: Complete login/logout history with session duration
+- **Data Change Tracking**: Field-level changes with before/after values
+- **Performance Monitoring**: API response times and slow endpoint detection
+- **Compliance Ready**: SOC 2, ISO 27001, GDPR compliance support
+
+#### Security Features
+- **Threat Detection**: Automatic detection of security threats
+- **Failed Login Tracking**: Monitor failed login attempts by IP
+- **Rate Limit Monitoring**: Track and block rate limit violations
+- **Security Events**: Log and resolve security incidents
+- **Risk Levels**: Low, medium, high, and critical risk classification
+- **IP Blocking**: Automatic blocking of suspicious IPs
+- **Resolution Workflow**: Track and resolve security events
+
+#### PDF Report Generation
+- **Professional Invoices**: Branded PDF invoices for payments
+- **Payment Receipts**: Receipts for completed transactions
+- **Deal Reports**: Comprehensive deal reports with vehicle and financial details
+- **Custom Branding**: Company logo and branding on all documents
+- **Download & Email**: Download PDFs or send via email
+- **Multiple Formats**: A4 and Letter size support
+
+### Core Features
+
+#### Automated Workflows
 
 1. **Document Verification Workflow**
    - Documents are uploaded by buyers/dealers
@@ -32,12 +87,34 @@ Nzila Export Hub is a Django-based platform that manages the complete vehicle ex
    - Automatic detection of stalled deals (14+ days without update)
    - Management command for sending follow-up notifications
 
-### User Roles
+#### User Roles
 
-- **Admin**: Full system access, document verification, user management
+- **Admin**: Full system access, document verification, user management, audit trail access
 - **Dealer**: Manage vehicle inventory, view their deals and commissions
 - **Broker**: Facilitate deals between dealers and buyers, earn commissions
 - **Buyer**: Browse vehicles, create leads, track orders and shipments
+
+## 📊 Technical Stack
+
+### Backend
+- **Framework**: Django 4.2+ with Django REST Framework
+- **Database**: PostgreSQL (production) / SQLite (development)
+- **Authentication**: JWT tokens with djangorestframework-simplejwt
+- **Payment Processing**: Stripe Python SDK
+- **2FA**: pyotp, qrcode
+- **PDF Generation**: ReportLab
+- **Task Queue**: Celery with Redis
+- **File Storage**: AWS S3 / Azure Blob Storage
+
+### Frontend
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **State Management**: React Query (TanStack Query)
+- **Routing**: React Router v6
+- **Forms**: React Hook Form
+- **UI Components**: Headless UI, Lucide Icons
+- **Date Handling**: date-fns
 
 ## Installation
 
@@ -102,6 +179,36 @@ Nzila Export Hub is a Django-based platform that manages the complete vehicle ex
 - `GET /api/accounts/users/me/` - Get current user profile
 - `PUT /api/accounts/users/me/` - Update current user profile
 
+### Payments (Phase 1)
+- `GET /api/v1/payments/currencies/` - List supported currencies
+- `GET /api/v1/payments/currencies/african/` - List African currencies
+- `GET /api/v1/payments/payment-methods/` - List payment methods
+- `POST /api/v1/payments/payment-methods/` - Add payment method
+- `POST /api/v1/payments/payments/create-intent/` - Create payment intent
+- `POST /api/v1/payments/payments/confirm/` - Confirm payment
+- `POST /api/v1/payments/payments/{id}/refund/` - Refund payment
+- `GET /api/v1/payments/payments/{id}/invoice-pdf/` - Download invoice PDF
+- `GET /api/v1/payments/payments/{id}/receipt-pdf/` - Download receipt PDF
+
+### Two-Factor Authentication (Phase 1)
+- `POST /api/v1/accounts/2fa/setup/totp/` - Setup TOTP 2FA
+- `POST /api/v1/accounts/2fa/verify/totp/` - Verify TOTP code
+- `POST /api/v1/accounts/2fa/disable/` - Disable 2FA
+- `GET /api/v1/accounts/2fa/backup-codes/` - Get backup codes
+- `POST /api/v1/accounts/2fa/regenerate-backup-codes/` - Regenerate backup codes
+
+### Audit Trail (Phase 2)
+- `GET /api/v1/audit/logs/` - List audit logs
+- `GET /api/v1/audit/logs/stats/` - Get audit statistics
+- `GET /api/v1/audit/logs/my_activity/` - Get user activity
+- `GET /api/v1/audit/login-history/` - List login history
+- `GET /api/v1/audit/login-history/failed_attempts/` - Failed login attempts
+- `GET /api/v1/audit/data-changes/` - List data changes
+- `GET /api/v1/audit/security-events/` - List security events
+- `POST /api/v1/audit/security-events/{id}/resolve/` - Resolve security event
+- `GET /api/v1/audit/api-access/` - List API access logs
+- `GET /api/v1/audit/api-access/slowest_endpoints/` - Performance analysis
+
 ### Vehicles
 - `GET /api/vehicles/vehicles/` - List vehicles (filtered by role)
 - `POST /api/vehicles/vehicles/` - Create vehicle (dealers only)
@@ -120,6 +227,7 @@ Nzila Export Hub is a Django-based platform that manages the complete vehicle ex
 - `POST /api/deals/deals/` - Create deal
 - `GET /api/deals/deals/{id}/` - Get deal details
 - `PUT /api/deals/deals/{id}/` - Update deal status
+- `GET /api/v1/payments/deals/{id}/report-pdf/` - Download deal report PDF
 
 ### Documents
 - `GET /api/deals/documents/` - List documents
@@ -136,6 +244,61 @@ Nzila Export Hub is a Django-based platform that manages the complete vehicle ex
 ### Commissions
 - `GET /api/commissions/commissions/` - List commissions (user's own)
 - `GET /api/commissions/commissions/{id}/` - Get commission details
+
+## Testing
+
+The platform includes comprehensive test suites for all major features.
+
+### Run All Tests
+```bash
+python manage.py test
+```
+
+### Run Specific Test Suites
+```bash
+# Audit trail tests
+python manage.py test audit.tests
+
+# PDF generation tests
+python manage.py test payments.test_pdf
+
+# Payment system tests
+python manage.py test payments.tests
+
+# With verbose output
+python manage.py test --verbosity=2
+```
+
+### Coverage Report
+```bash
+pip install coverage
+coverage run manage.py test
+coverage report
+coverage html  # Generate HTML report
+```
+
+### Test Documentation
+See [TESTING_GUIDE.md](TESTING_GUIDE.md) for comprehensive testing documentation.
+
+## Documentation
+
+### Guides
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide for development
+- **[API_DOCS.md](API_DOCS.md)** - Complete API reference documentation
+- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Testing suite documentation (41 tests)
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide (NEW)
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Implementation details
+- **[PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md)** - Production best practices
+
+### Implementation Summaries
+- **[PHASE_1_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Multi-Currency Payments + 2FA
+- **[PHASE_2_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Audit Trail + PDF Generation
+- **[PHASE_3_SUMMARY.md](PHASE_3_SUMMARY.md)** - Testing Suite + Documentation (NEW)
+
+### Development Status
+- ✅ **Phase 1 Complete**: Multi-Currency Payments + Two-Factor Authentication
+- ✅ **Phase 2 Complete**: Audit Trail System + PDF Report Generation
+- ✅ **Phase 3 Complete**: Comprehensive Testing Suite (41 tests) + Full Documentation
 
 ## Management Commands
 

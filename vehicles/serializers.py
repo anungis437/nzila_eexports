@@ -5,7 +5,7 @@ from .models import Vehicle, VehicleImage
 class VehicleImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleImage
-        fields = ['id', 'image', 'caption', 'uploaded_at']
+        fields = ['id', 'image', 'caption', 'is_primary', 'order', 'uploaded_at']
 
 
 class VehicleSerializer(serializers.ModelSerializer):

@@ -22,8 +22,10 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT', '5432'),
         'OPTIONS': {
             'connect_timeout': 10,
+            'options': '-c statement_timeout=30000',  # 30 second query timeout
         },
-        'CONN_MAX_AGE': 600,  # Connection pooling
+        'CONN_MAX_AGE': 600,  # Connection pooling - keep connections for 10 minutes
+        'CONN_HEALTH_CHECKS': True,  # Test connections before use
     }
 }
 

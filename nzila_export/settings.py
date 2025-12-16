@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,6 +28,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Frontend URL for email links
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+
 
 # Application definition
 
@@ -38,12 +42,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     # Project apps
+    'nzila_export',
     'accounts',
     'vehicles',
     'deals',
     'shipments',
     'commissions',
+    'analytics',
+    'notifications',
+    'payments',
+    'audit',
 ]
 
 MIDDLEWARE = [
@@ -55,6 +65,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Audit middleware
+    'audit.middleware.AuditMiddleware',
+    'audit.middleware.SecurityAuditMiddleware',
 ]
 
 ROOT_URLCONF = 'nzila_export.urls'
@@ -85,6 +98,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        # Connection pooling settings
+        'CONN_MAX_AGE': 600,  # Keep connections alive for 10 minutes
+        'CONN_HEALTH_CHECKS': True,  # Check connection health before using
+        'OPTIONS': {
+            'timeout': 20,  # Database timeout in seconds
+        },
     }
 }
 
@@ -147,6 +166,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'accounts.authentication.JWTCookieAuthentication',  # Custom cookie-based JWT
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -154,4 +174,73 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    # API Rate Limiting - CRITICAL SECURITY
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '20/hour',  # Anonymous users: 20 requests per hour
+        'user': '1000/hour',  # Authenticated users: 1000 requests per hour
+        'payment': '10/hour',  # Payment endpoints: stricter limit
+        'login': '5/hour',  # Login attempts: prevent brute force
+    },
 }
+
+# Stripe Payment Configuration
+from decouple import config, Csv
+STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY', default='')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
+
+# Twilio SMS Configuration (for 2FA)
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
+TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
+
+# Multi-Currency Configuration
+DEFAULT_CURRENCY = config('DEFAULT_CURRENCY', default='USD')
+SUPPORTED_CURRENCIES = config('SUPPORTED_CURRENCIES', cast=Csv(), 
+                             default='USD,EUR,GBP,ZAR,NGN,KES,GHS,EGP')
+
+# African Payment Gateways (Optional)
+FLUTTERWAVE_SECRET_KEY = config('FLUTTERWAVE_SECRET_KEY', default='')
+FLUTTERWAVE_PUBLIC_KEY = config('FLUTTERWAVE_PUBLIC_KEY', default='')
+PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
+PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')
+
+# Email Configuration (Development - Console Backend)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@nzilaventures.com')
+ADMIN_EMAIL = config('ADMIN_EMAIL', default='info@nzilaventures.com')
+
+# Exchange Rate API Configuration
+# Get free API key from: https://www.exchangerate-api.com/
+EXCHANGE_RATE_API_KEY = config('EXCHANGE_RATE_API_KEY', default=None)
+
+# Sentry Configuration - Error Tracking & Performance Monitoring
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
+
+SENTRY_DSN = config('SENTRY_DSN', default='')
+SENTRY_ENVIRONMENT = config('SENTRY_ENVIRONMENT', default='development')
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+            CeleryIntegration(),
+        ],
+        # Performance monitoring - sample 10% of transactions
+        traces_sample_rate=0.1,
+        # Profile 10% of transactions
+        profiles_sample_rate=0.1,
+        # Send errors from this environment
+        environment=SENTRY_ENVIRONMENT,
+        # Release tracking
+        release=config('APP_VERSION', default='1.0.0'),
+        # Better error context
+        send_default_pii=False,  # Don't send PII by default (GDPR compliance)
+    )

@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+from nzila_export.sanitizers import sanitize_html
 
 
 class Vehicle(models.Model):
@@ -101,6 +102,12 @@ class Vehicle(models.Model):
         verbose_name_plural = _('Vehicles')
         ordering = ['-created_at']
     
+    def save(self, *args, **kwargs):
+        """Sanitize user-generated content before saving"""
+        if self.description:
+            self.description = sanitize_html(self.description)
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return f"{self.year} {self.make} {self.model} ({self.vin})"
 
@@ -122,11 +129,26 @@ class VehicleImage(models.Model):
         blank=True,
         verbose_name=_('Caption')
     )
+    is_primary = models.BooleanField(
+        default=False,
+        verbose_name=_('Is Primary Image')
+    )
+    order = models.IntegerField(
+        default=0,
+        verbose_name=_('Display Order')
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         verbose_name = _('Vehicle Image')
         verbose_name_plural = _('Vehicle Images')
+        ordering = ['order', '-uploaded_at']
+    
+    def save(self, *args, **kwargs):
+        """Sanitize user-generated content before saving"""
+        if self.caption:
+            self.caption = sanitize_html(self.caption)
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"Image for {self.vehicle}"

@@ -20,66 +20,84 @@ export default function CallToAction() {
   }
 
   return (
-    <section id="contact" className="py-20 bg-gradient-to-br from-nzila-blue-900 via-nzila-blue-800 to-nzila-green-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="contact" className="relative py-24 overflow-hidden">
+      {/* Background Image with Overlay */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-amber-900/90 z-10"></div>
+        <img 
+          src="https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=2070" 
+          alt="Luxury vehicles"
+          className="w-full h-full object-cover"
+        />
+      </div>
+      
+      <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - CTA Text */}
           <div>
-            <h2 className="text-4xl sm:text-5xl font-extrabold mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 border border-amber-500/30 backdrop-blur-sm mb-6">
+              <span className="text-amber-400 font-semibold">🚀 Get Started</span>
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-extrabold mb-6 text-white">
               Ready to Expand Your Export Business?
             </h2>
-            <p className="text-xl text-blue-100 mb-8">
+            <p className="text-xl text-slate-200 mb-10 leading-relaxed">
               Join hundreds of Canadian dealers already using Nzila to reach verified buyers across West Africa.
             </p>
 
             {/* Benefits List */}
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-start gap-3">
-                <span className="text-nzila-green-400 text-2xl flex-shrink-0">✓</span>
-                <span>Access to pre-qualified buyers in 8+ African countries</span>
+            <ul className="space-y-5 mb-10">
+              <li className="flex items-start gap-4 group">
+                <span className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">✓</span>
+                <span className="text-slate-100">Access to pre-qualified buyers in 8+ African countries</span>
               </li>
-              <li className="flex items-start gap-3">
-                <span className="text-nzila-green-400 text-2xl flex-shrink-0">✓</span>
-                <span>Automated documentation and compliance workflows</span>
+              <li className="flex items-start gap-4 group">
+                <span className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">✓</span>
+                <span className="text-slate-100">Automated documentation and compliance workflows</span>
               </li>
-              <li className="flex items-start gap-3">
-                <span className="text-nzila-green-400 text-2xl flex-shrink-0">✓</span>
-                <span>Transparent commission tracking and instant payouts</span>
+              <li className="flex items-start gap-4 group">
+                <span className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">✓</span>
+                <span className="text-slate-100">Transparent commission tracking and instant payouts</span>
               </li>
-              <li className="flex items-start gap-3">
-                <span className="text-nzila-green-400 text-2xl flex-shrink-0">✓</span>
-                <span>Real-time shipment tracking from port to destination</span>
+              <li className="flex items-start gap-4 group">
+                <span className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform">✓</span>
+                <span className="text-slate-100">Real-time shipment tracking from port to destination</span>
               </li>
             </ul>
 
             {/* Contact Options */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">📧</span>
-                <a href="mailto:info@nzilaexport.com" className="hover:text-nzila-green-400 transition">
+            <div className="space-y-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6">
+              <div className="flex items-center gap-4 group">
+                <span className="text-3xl group-hover:scale-110 transition-transform">📧</span>
+                <a href="mailto:info@nzilaexport.com" className="text-white hover:text-amber-400 transition font-medium">
                   info@nzilaexport.com
                 </a>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">📞</span>
-                <span>+1 (416) 555-NZILA (Canada)</span>
+              <div className="flex items-center gap-4 group">
+                <span className="text-3xl group-hover:scale-110 transition-transform">📞</span>
+                <span className="text-slate-100 font-medium">+1 (416) 555-NZILA (Canada)</span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🌍</span>
-                <span>+234 (0) 1 555-8888 (Nigeria)</span>
+              <div className="flex items-center gap-4 group">
+                <span className="text-3xl group-hover:scale-110 transition-transform">🌍</span>
+                <span className="text-slate-100 font-medium">+234 (0) 1 555-8888 (Nigeria)</span>
               </div>
             </div>
           </div>
 
           {/* Right Column - Lead Capture Form */}
-          <div className="bg-white rounded-2xl shadow-2xl p-8 text-gray-900">
-            <h3 className="text-2xl font-bold mb-6">Get Started Today</h3>
+          <div className="bg-white rounded-2xl shadow-2xl p-10 text-gray-900 border-4 border-amber-500/20">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl mb-4 shadow-lg">
+                <span className="text-3xl">🚀</span>
+              </div>
+              <h3 className="text-3xl font-bold text-slate-900">Get Started Today</h3>
+            </div>
 
             {submitted ? (
-              <div className="bg-green-50 border-2 border-green-500 rounded-lg p-6 text-center">
-                <div className="text-5xl mb-4">✓</div>
-                <div className="text-xl font-bold text-green-800 mb-2">Thank You!</div>
-                <div className="text-green-700">We'll be in touch within 24 hours.</div>
+              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-4 border-emerald-500 rounded-2xl p-8 text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full text-white text-4xl mb-4 shadow-lg">✓</div>
+                <div className="text-2xl font-bold text-emerald-800 mb-3">Thank You!</div>
+                <div className="text-emerald-700 font-medium">We'll be in touch within 24 hours.</div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">

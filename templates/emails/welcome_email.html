@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Nzila Ventures</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 600;
+        }
+        .email-body {
+            padding: 30px 20px;
+        }
+        .welcome-message {
+            text-align: center;
+            font-size: 18px;
+            color: #10b981;
+            margin-bottom: 30px;
+        }
+        .feature-box {
+            background-color: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .feature-box h3 {
+            margin: 0 0 10px 0;
+            color: #059669;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            text-align: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #10b981;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .email-footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>🎉 Welcome!</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 18px;">You're now part of the Nzila Ventures family</p>
+        </div>
+        
+        <div class="email-body">
+            <div class="welcome-message">
+                <strong>Thank you for joining us, {{ user_name }}!</strong>
+            </div>
+            
+            <p>We're thrilled to have you on board. Nzila Ventures is your trusted partner for seamless global vehicle exports from Canada to anywhere in the world.</p>
+            
+            <h2 style="color: #10b981;">What You Can Do Now:</h2>
+            
+            <div class="feature-box">
+                <h3>🚗 Browse Vehicles</h3>
+                <p>Explore our extensive inventory of quality vehicles ready for export.</p>
+            </div>
+            
+            <div class="feature-box">
+                <h3>💼 Track Deals</h3>
+                <p>Monitor your purchases and shipments in real-time through your dashboard.</p>
+            </div>
+            
+            <div class="feature-box">
+                <h3>📄 Manage Documents</h3>
+                <p>Access all your export documents and invoices in one secure place.</p>
+            </div>
+            
+            <div class="feature-box">
+                <h3>🌍 Multi-Currency Support</h3>
+                <p>Pay in your preferred currency with real-time exchange rates.</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ dashboard_url }}" class="button">Go to Dashboard</a>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-number">5000+</div>
+                    <div class="stat-label">Vehicles Exported</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">Countries Served</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">99%</div>
+                    <div class="stat-label">Satisfaction Rate</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px;">Need Help Getting Started?</h3>
+            <p>Our support team is here to assist you every step of the way. Feel free to reach out:</p>
+            <ul>
+                <li>Email: <a href="mailto:info@nzilaventures.com">info@nzilaventures.com</a></li>
+                <li>Phone: +1 (234) 567-8900</li>
+                <li>Live Chat: Available on our website</li>
+            </ul>
+            
+            <p style="margin-top: 30px;">Welcome aboard, and happy exporting!</p>
+            
+            <p>Best regards,<br>
+            <strong>The Nzila Ventures Team</strong></p>
+        </div>
+        
+        <div class="email-footer">
+            <p><strong>Nzila Ventures</strong><br>
+            Your Global Vehicle Export Partner</p>
+            
+            <p style="margin-top: 15px; font-size: 12px; color: #999;">
+                © 2024 Nzila Ventures. All rights reserved.<br>
+                You're receiving this email because you created an account at nzilaventures.com
+            </p>
+        </div>
+    </div>
+</body>
+</html>

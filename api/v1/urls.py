@@ -19,6 +19,9 @@ from rest_framework_simplejwt.views import TokenRefreshView
 # Import privacy views
 from accounts import privacy_views
 
+# Import search views
+from nzila_export import search_views
+
 # Create router
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
@@ -38,6 +41,18 @@ urlpatterns = [
     # JWT Authentication
     path('auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # Notifications
+    path('notifications/', include('notifications.urls', namespace='notifications')),
+    
+    # Payments
+    path('payments/', include('payments.urls')),
+    
+    # Audit Trail
+    path('audit/', include('audit.urls')),
+    
+    # Global Search
+    path('search/', search_views.global_search, name='global_search'),
     
     # GDPR/PIPEDA Compliance
     path('privacy/export/', privacy_views.export_user_data, name='export_data'),

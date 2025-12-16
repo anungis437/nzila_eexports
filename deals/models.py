@@ -3,6 +3,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from datetime import timedelta
+from nzila_export.sanitizers import sanitize_html
 
 
 class Lead(models.Model):
@@ -77,6 +78,12 @@ class Lead(models.Model):
         verbose_name = _('Lead')
         verbose_name_plural = _('Leads')
         ordering = ['-created_at']
+    
+    def save(self, *args, **kwargs):
+        """Sanitize user-generated content before saving"""
+        if self.notes:
+            self.notes = sanitize_html(self.notes)
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"Lead #{self.id} - {self.buyer.username} - {self.vehicle}"
@@ -178,6 +185,10 @@ class Deal(models.Model):
         return f"Deal #{self.id} - {self.vehicle}"
     
     def save(self, *args, **kwargs):
+        """Sanitize user-generated content and auto-complete deal"""
+        # Sanitize notes
+        if self.notes:
+            self.notes = sanitize_html(self.notes)
         # Auto-complete deal when status is completed
         if self.status == 'completed' and not self.completed_at:
             self.completed_at = timezone.now()
@@ -262,6 +273,12 @@ class Document(models.Model):
         verbose_name = _('Document')
         verbose_name_plural = _('Documents')
         ordering = ['-uploaded_at']
+    
+    def save(self, *args, **kwargs):
+        """Sanitize user-generated content before saving"""
+        if self.notes:
+            self.notes = sanitize_html(self.notes)
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.get_document_type_display()} - Deal #{self.deal.id}"

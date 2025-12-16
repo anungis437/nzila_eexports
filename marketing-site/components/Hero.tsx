@@ -26,21 +26,31 @@ export default function Hero() {
   const t = content[language]
 
   return (
-    <div className="relative bg-gradient-to-br from-nzila-blue-900 via-nzila-blue-800 to-nzila-green-900 text-white overflow-hidden">
+    <div className="relative bg-slate-900 text-white overflow-hidden">
+      {/* Background Image with Overlay */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-amber-900/90 z-10"></div>
+        <img 
+          src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070" 
+          alt="Vehicles in African port"
+          className="w-full h-full object-cover"
+        />
+      </div>
+
       {/* Language Switcher */}
-      <div className="absolute top-4 right-4 z-20 flex gap-2">
+      <div className="absolute top-6 right-6 z-20 flex gap-2">
         <button
           onClick={() => setLanguage('en')}
-          className={`px-3 py-1 rounded-md text-sm font-medium transition ${
-            language === 'en' ? 'bg-white text-nzila-blue-900' : 'bg-white/20 hover:bg-white/30'
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
+            language === 'en' ? 'bg-amber-500 text-white' : 'bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20'
           }`}
         >
           EN
         </button>
         <button
           onClick={() => setLanguage('fr')}
-          className={`px-3 py-1 rounded-md text-sm font-medium transition ${
-            language === 'fr' ? 'bg-white text-nzila-blue-900' : 'bg-white/20 hover:bg-white/30'
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
+            language === 'fr' ? 'bg-amber-500 text-white' : 'bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20'
           }`}
         >
           FR

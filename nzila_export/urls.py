@@ -20,6 +20,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls.i18n import i18n_patterns
 from .views import home
+from .analytics_views import get_analytics_stats, get_revenue_chart, get_pipeline_chart, get_recent_activities
+from .settings_views import company_settings, currency_rates, currency_rate_detail
 
 urlpatterns = [
     path('', home, name='home'),
@@ -35,6 +37,17 @@ urlpatterns = [
     path('api/deals/', include('deals.urls')),
     path('api/shipments/', include('shipments.urls')),
     path('api/commissions/', include('commissions.urls')),
+    
+    # Analytics endpoints
+    path('api/analytics/stats/', get_analytics_stats, name='analytics-stats'),
+    path('api/analytics/revenue/', get_revenue_chart, name='analytics-revenue'),
+    path('api/analytics/pipeline/', get_pipeline_chart, name='analytics-pipeline'),
+    path('api/analytics/activities/', get_recent_activities, name='analytics-activities'),
+    
+    # Settings endpoints
+    path('api/settings/company/', company_settings, name='company-settings'),
+    path('api/settings/currency/', currency_rates, name='currency-rates'),
+    path('api/settings/currency/<int:pk>/', currency_rate_detail, name='currency-rate-detail'),
     
     # Internationalization
     path('i18n/', include('django.conf.urls.i18n')),

@@ -1,8 +1,27 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from .models import User
 from .serializers import UserSerializer, UserProfileSerializer
+
+
+class LogoutView(APIView):
+    """
+    Logout endpoint that clears httpOnly cookies
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        """Clear authentication cookies on logout"""
+        response = Response(
+            {'message': 'Logout successful'},
+            status=status.HTTP_200_OK
+        )
+        # Delete auth cookies
+        response.delete_cookie('access_token', path='/')
+        response.delete_cookie('refresh_token', path='/')
+        return response
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):

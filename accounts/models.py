@@ -45,6 +45,42 @@ class User(AbstractUser):
         verbose_name=_('Preferred Language')
     )
     
+    # Payment integration
+    stripe_customer_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_('Stripe Customer ID')
+    )
+    
+    # Two-Factor Authentication
+    two_factor_enabled = models.BooleanField(
+        default=False,
+        verbose_name=_('2FA Enabled')
+    )
+    two_factor_secret = models.CharField(
+        max_length=32,
+        blank=True,
+        null=True,
+        verbose_name=_('2FA Secret')
+    )
+    phone_verified = models.BooleanField(
+        default=False,
+        verbose_name=_('Phone Verified')
+    )
+    
+    def is_admin(self):
+        return self.role == 'admin' or self.is_superuser
+    
+    def is_dealer(self):
+        return self.role == 'dealer'
+    
+    def is_broker(self):
+        return self.role == 'broker'
+    
+    def is_buyer(self):
+        return self.role == 'buyer'
+    
     class Meta:
         verbose_name = _('User')
         verbose_name_plural = _('Users')
