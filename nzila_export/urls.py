@@ -23,10 +23,17 @@ from .views import home
 from .analytics_views import get_analytics_stats, get_revenue_chart, get_pipeline_chart, get_recent_activities
 from .settings_views import company_settings, currency_rates, currency_rate_detail
 
+def trigger_error(request):
+    """Sentry test endpoint - triggers a division by zero error"""
+    division_by_zero = 1 / 0
+
 urlpatterns = [
     path('', home, name='home'),
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
+    
+    # Sentry debug endpoint (only available in DEBUG mode)
+    path('sentry-debug/', trigger_error),
     
     # Versioned API endpoints
     path('api/v1/', include('api.v1.urls', namespace='api_v1')),
