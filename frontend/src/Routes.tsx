@@ -17,6 +17,7 @@ const BuyerPortal = lazy(() => import('./pages/BuyerPortal.tsx'))
 const Settings = lazy(() => import('./pages/Settings.tsx'))
 const Payments = lazy(() => import('./pages/Payments.tsx'))
 const AuditTrail = lazy(() => import('./pages/AuditTrail.tsx'))
+const AdminTest = lazy(() => import('./pages/AdminTest.tsx'))
 
 // Loading component for lazy routes
 function LoadingFallback() {
@@ -68,6 +69,7 @@ export default function Routes() {
             <Route path="payments" element={<Payments />} />
             <Route path="audit-trail" element={<AuditTrail />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="admin-test" element={<AdminTest />} />
           </Route>
         </RouterRoutes>
       </Suspense>

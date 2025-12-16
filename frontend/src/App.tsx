@@ -4,6 +4,7 @@ import { LanguageProvider } from './contexts/LanguageContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { Toaster } from './components/ui/toaster'
 import Routes from './Routes'
+import SentryTestPanel from './components/SentryTestButton'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +24,8 @@ function App() {
           <LanguageProvider>
             <Routes />
             <Toaster />
+            {/* Sentry test panel - only shows in development */}
+            {import.meta.env.DEV && <SentryTestPanel />}
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>

@@ -12,6 +12,10 @@ if (SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: ENVIRONMENT,
+    // Send default PII data (IP addresses, user info)
+    sendDefaultPii: true,
+    // Enable structured logging
+    enableLogs: true,
     // Performance monitoring
     integrations: [
       Sentry.browserTracingIntegration(),
@@ -19,14 +23,14 @@ if (SENTRY_DSN) {
         maskAllText: true,
         blockAllMedia: true,
       }),
+      // Send console logs to Sentry
+      Sentry.consoleLoggingIntegration({ levels: ['log', 'warn', 'error'] }),
     ],
     // Performance monitoring sample rate (10% of transactions)
     tracesSampleRate: 0.1,
     // Session replay sample rate
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    // Don't send errors in development
-    enabled: ENVIRONMENT !== 'development',
   })
 }
 

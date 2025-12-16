@@ -31,6 +31,21 @@ ALLOWED_HOSTS = []
 # Frontend URL for email links
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
+# CORS Configuration
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:5176',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    'http://127.0.0.1:5175',
+    'http://127.0.0.1:5176',
+    'http://localhost:3000',
+    'http://localhost:3001',
+]
+CORS_ALLOW_CREDENTIALS = True
+
 
 # Application definition
 
@@ -41,6 +56,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'django_filters',
     # Project apps
@@ -58,6 +74,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -180,10 +197,10 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '20/hour',  # Anonymous users: 20 requests per hour
+        'anon': '200/hour',  # Anonymous users: 200 requests per hour (increased for dev)
         'user': '1000/hour',  # Authenticated users: 1000 requests per hour
         'payment': '10/hour',  # Payment endpoints: stricter limit
-        'login': '5/hour',  # Login attempts: prevent brute force
+        'login': '50/hour',  # Login attempts: 50 per hour (increased for dev)
     },
 }
 

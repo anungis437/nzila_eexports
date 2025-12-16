@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { apiClient } from '../lib/api'
 
 interface User {
@@ -11,6 +11,9 @@ interface User {
   role: 'admin' | 'dealer' | 'broker' | 'buyer'
   company_name?: string
   phone?: string
+  is_staff?: boolean
+  is_superuser?: boolean
+  is_active?: boolean
 }
 
 interface AuthContextType {
@@ -20,6 +23,9 @@ interface AuthContextType {
   logout: () => void
   register: (data: any) => Promise<void>
   isAuthenticated: boolean
+  isAdmin: boolean
+  isSuperuser: boolean
+  isStaff: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,23 +34,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadUser()
-  }, [])
-
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     try {
       // Try to load user from API (token is in httpOnly cookie)
       const userData = await apiClient.getCurrentUser()
       setUser(userData)
     } catch (error) {
-      // User not authenticated or token expired
+      // User not authenticated or token expired - this is normal if not logged in
       console.error('Failed to load user:', error)
       localStorage.removeItem('user')
+      setUser(null)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadUser()
+  }, [loadUser])
 
   const login = async (email: string, password: string) => {
     await apiClient.login(email, password)
@@ -72,6 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         register,
         isAuthenticated: !!user,
+        isAdmin: user?.role === 'admin' || user?.is_staff || user?.is_superuser || false,
+        isSuperuser: user?.is_superuser || false,
+        isStaff: user?.is_staff || false,
       }}
     >
       {children}
