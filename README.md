@@ -1,23 +1,80 @@
 # Nzila Export Hub
 
-A comprehensive, enterprise-grade vehicle export platform connecting Canadian dealers with West African buyers. Built with Django REST Framework, React, and TypeScript.
+A comprehensive, enterprise-grade vehicle export platform connecting Canadian dealers with West African buyers. Built with Django REST Framework, React, TypeScript, and modern real-time technologies.
 
 ## Overview
 
-Nzila Export Hub is a full-stack platform that manages the complete vehicle export pipeline with advanced payment processing, security features, and audit capabilities. The system handles:
+Nzila Export Hub is a full-stack platform that manages the complete vehicle export pipeline with advanced payment processing, security features, real-time communication, and comprehensive vehicle data integration. The system handles:
 
+- **Real-Time Chat System**: WebSocket-based messaging with typing indicators and read receipts
+- **Multi-Image Gallery**: Bulk upload, drag-and-drop reordering, video support up to 50 media per vehicle
+- **Vehicle History Integration**: Carfax API integration with 7-day caching for comprehensive vehicle reports
+- **WhatsApp Business API**: Automated notifications and inquiry responses via WhatsApp
+- **PWA Support**: Progressive Web App with offline capabilities and push notifications
 - **Multi-Currency Payment System**: 33 currencies supported with Stripe integration
 - **Two-Factor Authentication**: TOTP and SMS-based 2FA for enhanced security
 - **Comprehensive Audit Trail**: Complete activity logging and security monitoring
 - **PDF Report Generation**: Professional invoices, receipts, and reports
 - **Lead-to-Deal Pipeline Management**: Track buyers from interest to completed sale
-- **Shipment Tracking**: Real-time tracking of vehicle shipments
+- **Shipment Tracking**: Real-time tracking of vehicle shipments with GPS updates
 - **Document Verification**: Automated workflow for verifying export documents
 - **Commission Automation**: Automatic commission calculation and tracking
 - **Multi-Role System**: Separate portals for admins, dealers, brokers, and buyers
 - **Bilingual Support**: Full English/French (EN/FR) interface
 
 ## 🚀 Key Features
+
+### Q1 2026: Real-Time Communication & Vehicle Data (Complete) ✨
+
+#### Real-Time Chat System
+- **WebSocket Integration**: Django Channels with Redis for real-time messaging
+- **Live Messaging**: Instant message delivery between buyers and dealers
+- **Typing Indicators**: See when the other person is typing
+- **Read Receipts**: Know when your messages have been read
+- **Online Status**: Real-time user presence tracking
+- **Message History**: Full conversation history with pagination
+- **Unread Counts**: Track unread messages per conversation
+- **Auto-Reconnection**: Automatic reconnection on connection loss
+- **Type-Safe Implementation**: Full TypeScript and Python type annotations
+
+#### Multi-Image & Video Gallery
+- **Bulk Upload**: Upload up to 50 images per vehicle at once
+- **Drag-and-Drop Reordering**: Intuitive image sequence management
+- **Video Support**: Upload vehicle walkaround videos with thumbnails
+- **Primary Image Management**: Set any image as the primary display
+- **Auto-Promotion**: Automatic promotion of next image when primary is deleted
+- **Media Types**: Support for both images and videos
+- **Responsive Gallery**: Optimized viewing on all devices
+- **S3 Integration**: Scalable cloud storage for media files
+
+#### Vehicle History Integration (Carfax)
+- **Carfax API Integration**: Comprehensive vehicle history reports
+- **7-Day Caching**: Efficient caching to reduce API costs
+- **Mock Mode**: Development-friendly mock data when API not configured
+- **Accident History**: Complete accident records with severity levels
+- **Ownership Timeline**: Detailed ownership history with duration
+- **Service Records**: Full maintenance and service history
+- **Title Status**: Clean, salvage, rebuilt, flood, hail, lemon, junk
+- **Trust Score**: Calculated vehicle trustworthiness score (0-100)
+- **Odometer Tracking**: Rollback detection and verification
+- **Canadian Data Integration**: Transport Canada recalls, provincial registries
+
+#### WhatsApp Business Integration
+- **Automated Notifications**: Deal updates, shipment tracking via WhatsApp
+- **Inquiry Responses**: Automated responses to vehicle inquiries
+- **Template Messages**: Pre-approved message templates for compliance
+- **Mock Mode**: Test mode for development without API credentials
+- **Multi-Language**: Support for English and French messages
+- **Vehicle Sharing**: Share vehicle details directly via WhatsApp
+- **Webhook Integration**: Real-time status updates and delivery receipts
+
+#### Progressive Web App (PWA)
+- **Offline Support**: Browse cached vehicles without internet
+- **Push Notifications**: Real-time deal and message notifications
+- **Install Prompt**: Add to home screen on mobile devices
+- **Service Worker**: Background sync and caching strategies
+- **App Shell**: Fast loading with app shell architecture
+- **Responsive Design**: Native-like experience on all devices
 
 ### Phase 1: Payments & Security (Complete)
 
@@ -98,6 +155,7 @@ Nzila Export Hub is a full-stack platform that manages the complete vehicle expo
 
 ### Backend
 - **Framework**: Django 4.2+ with Django REST Framework
+- **Real-Time**: Django Channels 4.0+ with Redis
 - **Database**: PostgreSQL (production) / SQLite (development)
 - **Authentication**: JWT tokens with djangorestframework-simplejwt
 - **Payment Processing**: Stripe Python SDK
@@ -105,6 +163,9 @@ Nzila Export Hub is a full-stack platform that manages the complete vehicle expo
 - **PDF Generation**: ReportLab
 - **Task Queue**: Celery with Redis
 - **File Storage**: AWS S3 / Azure Blob Storage
+- **Vehicle Data**: Carfax API integration
+- **Messaging**: WhatsApp Business API (Twilio/Meta)
+- **Type Safety**: Comprehensive Python type hints
 
 ### Frontend
 - **Framework**: React 18 with TypeScript
@@ -113,18 +174,22 @@ Nzila Export Hub is a full-stack platform that manages the complete vehicle expo
 - **State Management**: React Query (TanStack Query)
 - **Routing**: React Router v6
 - **Forms**: React Hook Form
-- **UI Components**: Headless UI, Lucide Icons
+- **UI Components**: Headless UI, Lucide Icons, shadcn/ui
 - **Date Handling**: date-fns
+- **Real-Time**: WebSocket API with auto-reconnection
+- **PWA**: Service Worker with Workbox
 
 ## Installation
 
 ### Prerequisites
 
 - Python 3.12+
+- Node.js 18+ and npm
+- Redis 5.0+ (for WebSocket and caching)
 - pip
 - virtualenv (recommended)
 
-### Setup
+### Backend Setup
 
 1. **Clone the repository**
    ```bash
@@ -146,29 +211,80 @@ Nzila Export Hub is a full-stack platform that manages the complete vehicle expo
 4. **Configure environment variables**
    ```bash
    cp .env.example .env
-   # Edit .env with your configuration
+   # Edit .env with your configuration:
+   # - REDIS_HOST, REDIS_PORT (for WebSocket)
+   # - CARFAX_API_KEY (optional, uses mock mode if not set)
+   # - WHATSAPP_API_TOKEN (optional, uses mock mode if not set)
+   # - AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (for S3)
+   # - STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY
    ```
 
-5. **Run migrations**
+5. **Start Redis server**
+   ```bash
+   redis-server
+   # Or on Windows with Redis installed:
+   redis-server.exe
+   ```
+
+6. **Run migrations**
    ```bash
    python manage.py migrate
    ```
 
-6. **Create superuser**
+7. **Create superuser**
    ```bash
    python manage.py createsuperuser
    ```
 
-7. **Run development server**
+8. **Seed sample data (optional)**
    ```bash
-   python manage.py runserver
+   python manage.py seed_worldclass
+   # Creates dealers, brokers, buyers, vehicles, deals, and conversations
    ```
 
-8. **Access the application**
-   - Admin interface: http://localhost:8000/admin/
-   - API endpoints: http://localhost:8000/api/
+9. **Run development server**
+   ```bash
+   python manage.py runserver
+   # Or with ASGI for WebSocket support:
+   daphne -b 0.0.0.0 -p 8000 nzila_export.asgi:application
+   ```
 
-## API Endpoints
+### Frontend Setup
+
+1. **Navigate to frontend directory**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment**
+   ```bash
+   cp .env.example .env.local
+   # Edit with your API URLs
+   ```
+
+4. **Run development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+### Access the Application
+
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000/api/
+- Admin interface: http://localhost:8000/admin/
+- WebSocket endpoint: ws://localhost:8000/ws/
+
+## 📡 API Endpoints
 
 ### Authentication
 - `POST /api-auth/login/` - Login
@@ -178,6 +294,12 @@ Nzila Export Hub is a full-stack platform that manages the complete vehicle expo
 - `GET /api/accounts/users/` - List users
 - `GET /api/accounts/users/me/` - Get current user profile
 - `PUT /api/accounts/users/me/` - Update current user profile
+
+### WebSocket Endpoints (Q1 2026)
+- `ws://localhost:8000/ws/chat/{conversation_id}/` - Real-time chat connection
+  - Events: `message`, `typing`, `read_receipt`, `user_status`
+  - Auto-reconnection with exponential backoff
+  - Type-safe message handling
 
 ### Payments (Phase 1)
 - `GET /api/v1/payments/currencies/` - List supported currencies
@@ -215,6 +337,22 @@ Nzila Export Hub is a full-stack platform that manages the complete vehicle expo
 - `GET /api/vehicles/vehicles/{id}/` - Get vehicle details
 - `PUT /api/vehicles/vehicles/{id}/` - Update vehicle
 - `DELETE /api/vehicles/vehicles/{id}/` - Delete vehicle
+- `GET /api/vehicles/vehicles/{id}/images/` - Get vehicle images
+- `POST /api/vehicles/vehicle-images/bulk-upload/` - Bulk image upload (max 50)
+- `POST /api/vehicles/vehicle-images/reorder/` - Reorder images via drag-drop
+- `POST /api/vehicles/vehicle-images/{id}/set-primary/` - Set primary image
+
+### Vehicle History (Q1 2026)
+- `GET /api/vehicle-history/{vehicle_id}/comprehensive/` - Complete vehicle history
+- `GET /api/vehicle-history/{vehicle_id}/carfax/` - Carfax report (7-day cache)
+- `GET /api/vehicle-history/{vehicle_id}/recalls/` - Safety recalls
+- `GET /api/vehicle-history/{vehicle_id}/summary/` - Quick summary with trust score (0-100)
+
+### Notifications (Q1 2026)
+- `GET /api/notifications/` - List user notifications
+- `POST /api/notifications/{id}/mark-read/` - Mark as read
+- `POST /api/notifications/mark-all-read/` - Mark all as read
+- `POST /api/notifications/whatsapp/send/` - Send WhatsApp notification (mock mode)
 
 ### Leads
 - `GET /api/deals/leads/` - List leads
