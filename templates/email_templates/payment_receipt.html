@@ -1,0 +1,51 @@
+{% extends "email_templates/base.html" %}
+
+{% block content %}
+    <h1 class="greeting">Payment Receipt</h1>
+    
+    <p class="message">
+        Hi {{ buyer_name }},
+    </p>
+    
+    <p class="message">
+        Thank you for your payment! This email confirms that we've received your payment successfully.
+    </p>
+    
+    <div class="info-box" style="background-color: #ecfdf5; border-left-color: #10b981;">
+        <h3>💰 Payment Details</h3>
+        <p><strong>Payment ID:</strong> #{{ payment_id }}</p>
+        <p><strong>Amount:</strong> {{ amount }} {{ currency }}</p>
+        <p><strong>Date:</strong> {{ date|date:"F d, Y" }}</p>
+        <p><strong>Payment Method:</strong> {{ payment_method }}</p>
+        <p><strong>Deal ID:</strong> #{{ deal_id }}</p>
+    </div>
+    
+    <p class="message">
+        Your payment has been processed successfully and your deal is now moving forward. We'll keep you updated on the next steps.
+    </p>
+    
+    <div style="text-align: center;">
+        <a href="{{ invoice_url }}" class="cta-button">View Invoice</a>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <p class="message" style="font-size: 14px;">
+        <strong>What's Next?</strong><br>
+        1. Your vehicle will be prepared for shipment<br>
+        2. You'll receive shipping documentation<br>
+        3. We'll provide tracking information<br>
+        4. You'll be notified when your vehicle is en route
+    </p>
+    
+    <div class="info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+        <h3>📄 Keep This Receipt</h3>
+        <p style="margin: 0; font-size: 14px;">
+            Save this email for your records. You may need it for customs clearance or insurance purposes.
+        </p>
+    </div>
+    
+    <p class="message" style="font-size: 14px; color: #64748b;">
+        If you believe there's an error with this payment or have any questions, please contact our finance team immediately at {{ support_email }}.
+    </p>
+{% endblock %}

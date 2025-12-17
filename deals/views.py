@@ -5,7 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import Lead, Deal, Document
-from .serializers import LeadSerializer, DealSerializer, DocumentSerializer
+from .serializers import LeadSerializer, DealSerializer, DocumentSerializer, BuyerDealSerializer
 
 
 class LeadViewSet(viewsets.ModelViewSet):
@@ -45,8 +45,14 @@ class DealViewSet(viewsets.ModelViewSet):
     serializer_class = DealSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['status', 'dealer', 'broker', 'payment_status']
+    filterset_fields = ['status', 'dealer', 'broker', 'payment_status', 'payment_method']
     ordering = ['-created_at']
+    
+    def get_serializer_class(self):
+        """Use simplified serializer for buyers"""
+        if self.request.user.is_buyer():
+            return BuyerDealSerializer
+        return DealSerializer
     
     def get_queryset(self):
         queryset = super().get_queryset()

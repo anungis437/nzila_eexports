@@ -18,3 +18,18 @@ reportlab>=4.0.0
 pyotp>=2.9.0
 qrcode>=7.4.2
 stripe>=7.0.0
+
+# WebSocket Support (Django Channels)
+channels>=4.0.0
+channels-redis>=4.1.0
+daphne>=4.0.0
+
+# Image Processing
+Pillow>=10.0.0
+
+# Geolocation & Timezone Support
+pytz>=2024.1                  # Timezone database (IANA timezones)
+geopy>=2.4.0                  # Geocoding (address -> lat/long, distance calculations)
+django-timezone-field>=6.1.0  # Better timezone field for models
+geoip2>=4.7.0                 # IP-based geolocation (MaxMind GeoIP2)
+pycountry>=23.12.11           # ISO country/currency/language data

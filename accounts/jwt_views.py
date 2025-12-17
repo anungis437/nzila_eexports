@@ -14,9 +14,23 @@ from django.conf import settings
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
     Custom JWT serializer with additional user information
+    Accepts email or username for login
     """
     
     def validate(self, attrs):
+        # Try to get user by email first if email-like string provided
+        from accounts.models import User
+        
+        username_or_email = attrs.get(self.username_field)
+        
+        # If looks like email, convert to username
+        if username_or_email and '@' in username_or_email:
+            try:
+                user = User.objects.get(email=username_or_email)
+                attrs[self.username_field] = user.username
+            except User.DoesNotExist:
+                pass  # Will fail with invalid credentials in super().validate()
+        
         data = super().validate(attrs)
         
         # Add extra user info to token response
@@ -98,19 +112,24 @@ class CustomTokenRefreshView(TokenRefreshView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        # Add refresh token to request data
-        request.data._mutable = True if hasattr(request.data, '_mutable') else False
-        data = request.data.copy() if hasattr(request.data, 'copy') else {}
-        data['refresh'] = refresh_token
-        request._full_data = data
+        # Create serializer with refresh token from cookie
+        serializer = self.get_serializer(data={'refresh': refresh_token})
         
-        response = super().post(request, *args, **kwargs)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            return Response(
+                {'detail': str(e)},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         
         # Set new access token in cookie
-        if response.status_code == status.HTTP_200_OK and 'access' in response.data:
+        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
+        
+        if 'access' in serializer.validated_data:
             response.set_cookie(
                 key='access_token',
-                value=response.data['access'],
+                value=serializer.validated_data['access'],
                 max_age=3600,  # 1 hour
                 httponly=True,
                 secure=not settings.DEBUG,

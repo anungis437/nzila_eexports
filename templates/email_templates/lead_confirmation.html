@@ -1,0 +1,40 @@
+{% extends "email_templates/base.html" %}
+
+{% block content %}
+    <h1 class="greeting">Thank You, {{ lead_name }}!</h1>
+    
+    <p class="message">
+        We've received your inquiry about the vehicle below and one of our team members will be in touch with you shortly.
+    </p>
+    
+    <div class="info-box">
+        <h3>🚗 Vehicle Details</h3>
+        <p><strong>Year:</strong> {{ vehicle_year }}</p>
+        <p><strong>Make:</strong> {{ vehicle_make }}</p>
+        <p><strong>Model:</strong> {{ vehicle_model }}</p>
+        <p><strong>VIN:</strong> {{ vehicle_vin }}</p>
+    </div>
+    
+    <p class="message">
+        In the meantime, feel free to browse more vehicles in our inventory or explore similar options that might interest you.
+    </p>
+    
+    <div style="text-align: center;">
+        <a href="{{ portal_url }}" class="cta-button">Browse More Vehicles</a>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <p class="message" style="font-size: 14px;">
+        <strong>What Happens Next?</strong><br>
+        1. Our team will review your inquiry<br>
+        2. We'll verify vehicle availability and pricing<br>
+        3. You'll receive a detailed response within 24 hours<br>
+        4. We'll guide you through the next steps
+    </p>
+    
+    <p class="message" style="font-size: 14px; color: #64748b;">
+        Reference Number: <strong>#{{ vehicle_vin|slice:"-6:" }}</strong><br>
+        Please include this reference number in any follow-up communications.
+    </p>
+{% endblock %}

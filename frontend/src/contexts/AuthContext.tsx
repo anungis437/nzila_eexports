@@ -40,9 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await apiClient.getCurrentUser()
       setUser(userData)
     } catch (error) {
-      // User not authenticated or token expired - this is normal if not logged in
-      console.error('Failed to load user:', error)
-      localStorage.removeItem('user')
+      // User not authenticated or token expired
       setUser(null)
     } finally {
       setLoading(false)
@@ -51,15 +49,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadUser()
-  }, [loadUser])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const login = async (email: string, password: string) => {
     await apiClient.login(email, password)
     await loadUser()
   }
 
-  const logout = () => {
-    apiClient.logout()
+  const logout = async () => {
+    await apiClient.logout()
     setUser(null)
   }
 

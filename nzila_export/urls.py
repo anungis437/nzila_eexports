@@ -44,8 +44,25 @@ urlpatterns = [
     path('api/deals/', include('deals.urls')),
     path('api/shipments/', include('shipments.urls')),
     path('api/commissions/', include('commissions.urls')),
+    path('api/', include('favorites.urls')),
+    path('', include('saved_searches.urls')),
+    path('', include('price_alerts.urls')),
+    path('', include('recommendations.urls')),
+    path('api/vehicle-history/', include('vehicle_history.urls')),
+    
+    # Chat/Messaging endpoints
+    path('api/chat/', include('chat.urls')),
+    
+    # Reviews and Ratings endpoints
+    path('api/', include('reviews.urls')),
+    
+    # Analytics Dashboard endpoints (new comprehensive analytics)
+    path('api/analytics-dashboard/', include('analytics_dashboard.urls')),
     
     # Analytics endpoints
+    path('api/analytics/', include('analytics.urls')),
+    
+    # Analytics endpoints (legacy)
     path('api/analytics/stats/', get_analytics_stats, name='analytics-stats'),
     path('api/analytics/revenue/', get_revenue_chart, name='analytics-revenue'),
     path('api/analytics/pipeline/', get_pipeline_chart, name='analytics-pipeline'),

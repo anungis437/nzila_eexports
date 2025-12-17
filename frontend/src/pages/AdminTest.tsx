@@ -22,8 +22,8 @@ export default function AdminTest() {
                   }`}>
                     {isAuthenticated ? '✓ Yes' : '✗ No'}
                   </span>
-                </diflex min-h-screen items-center justify-center
-                <div ch-12 w-12 animate-spin rounded-full border-b-2 border-primary-600
+                </div>
+                <div className="flex items-center">
                   <span className="font-medium mr-2">Admin:</span>
                   <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                     isAdmin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'

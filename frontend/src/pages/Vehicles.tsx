@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Filter, Edit2, Trash2, Car } from 'lucide-react'
+import { Plus, Search, Filter, Edit2, Trash2, Car, Eye } from 'lucide-react'
 import api from '../lib/api'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import VehicleFormModal from '../components/VehicleFormModal'
+import VehicleDetailModal from '../components/VehicleDetailModal'
 import { Vehicle } from '../types'
 
 export default function Vehicles() {
@@ -14,6 +15,7 @@ export default function Vehicles() {
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | undefined>()
+  const [viewingVehicle, setViewingVehicle] = useState<Vehicle | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [conditionFilter, setConditionFilter] = useState<string>('all')
@@ -253,7 +255,10 @@ export default function Vehicles() {
               aria-label={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
             >
               {/* Image */}
-              <div className="aspect-video bg-slate-100 relative overflow-hidden">
+              <div 
+                className="aspect-video bg-slate-100 relative overflow-hidden cursor-pointer"
+                onClick={() => setViewingVehicle(vehicle)}
+              >
                 {vehicle.main_image ? (
                   <img
                     src={vehicle.main_image}
@@ -273,6 +278,10 @@ export default function Vehicles() {
                   >
                     {getStatusLabel(vehicle.status)}
                   </span>
+                </div>
+                {/* View icon overlay */}
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                  <Eye className="w-12 h-12 text-white" />
                 </div>
               </div>
 
@@ -303,11 +312,25 @@ export default function Vehicles() {
                     <span className="font-medium">{language === 'fr' ? 'Lieu:' : 'Location:'}</span>
                     <span>{vehicle.location}</span>
                   </div>
+                  {vehicle.images && vehicle.images.length > 0 && (
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <Eye className="w-3 h-3" />
+                      <span>{vehicle.images.length} {language === 'fr' ? 'images' : 'images'}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}
                 {canManageVehicles && (
                   <div className="flex gap-2 pt-3 border-t border-slate-200">
+                    <button
+                      onClick={() => setViewingVehicle(vehicle)}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-blue-700 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+                      aria-label={`${language === 'fr' ? 'Voir' : 'View'} ${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                    >
+                      <Eye className="w-4 h-4" aria-hidden="true" />
+                      {language === 'fr' ? 'Voir' : 'View'}
+                    </button>
                     <button
                       onClick={() => handleEdit(vehicle)}
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
@@ -321,7 +344,6 @@ export default function Vehicles() {
                       disabled={deleteMutation.isPending}
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
                       aria-label={`${language === 'fr' ? 'Supprimer' : 'Delete'} ${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                      aria-disabled={deleteMutation.isPending}
                     >
                       <Trash2 className="w-4 h-4" aria-hidden="true" />
                       {language === 'fr' ? 'Supprimer' : 'Delete'}
@@ -343,6 +365,18 @@ export default function Vehicles() {
         }}
         vehicle={editingVehicle}
       />
+
+      {/* Detail Modal */}
+      {viewingVehicle && (
+        <VehicleDetailModal
+          vehicle={viewingVehicle}
+          onClose={() => setViewingVehicle(null)}
+          onEdit={(vehicle) => {
+            setViewingVehicle(null)
+            handleEdit(vehicle)
+          }}
+        />
+      )}
     </div>
   )
 }

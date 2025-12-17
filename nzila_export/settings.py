@@ -50,12 +50,14 @@ CORS_ALLOW_CREDENTIALS = True
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',  # Django Channels ASGI server - must be before django.contrib.staticfiles
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',  # Django Channels for WebSockets
     'corsheaders',
     'rest_framework',
     'django_filters',
@@ -70,6 +72,15 @@ INSTALLED_APPS = [
     'notifications',
     'payments',
     'audit',
+    'favorites',
+    'email_templates',
+    'saved_searches',
+    'price_alerts',
+    'recommendations',
+    'vehicle_history',
+    'analytics_dashboard',
+    'chat',
+    'reviews',
 ]
 
 MIDDLEWARE = [
@@ -107,6 +118,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'nzila_export.wsgi.application'
 
+# ASGI Application (Django Channels for WebSockets)
+ASGI_APPLICATION = 'nzila_export.asgi_channels.application'
+
+# Django Channels Configuration
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.environ.get('REDIS_HOST', '127.0.0.1'), 6379)],
+            "capacity": 1500,  # Max messages in channel before blocking
+            "expiry": 10,  # Message expiry in seconds
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -197,10 +222,13 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '200/hour',  # Anonymous users: 200 requests per hour (increased for dev)
-        'user': '1000/hour',  # Authenticated users: 1000 requests per hour
-        'payment': '10/hour',  # Payment endpoints: stricter limit
-        'login': '50/hour',  # Login attempts: 50 per hour (increased for dev)
+        'anon': '1000/hour',  # Anonymous users: increased for dev
+        'user': '10000/hour',  # Authenticated users: increased for dev
+        'payment': '100/hour',  # Payment endpoints: increased for dev
+        'login': '1000/hour',  # Login attempts: increased for dev
+        'vehicle_history': '100/hour',  # CarFax/AutoCheck API calls
+        'transport_canada': '1000/hour',  # Transport Canada public data
+        'provincial_registry': '50/hour',  # Provincial registry APIs
     },
 }
 
@@ -223,10 +251,17 @@ SUPPORTED_CURRENCIES = config('SUPPORTED_CURRENCIES', cast=Csv(),
 # African Payment Gateways (Optional)
 FLUTTERWAVE_SECRET_KEY = config('FLUTTERWAVE_SECRET_KEY', default='')
 FLUTTERWAVE_PUBLIC_KEY = config('FLUTTERWAVE_PUBLIC_KEY', default='')
-PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
-PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')
+CARFAX_API_URL = config('CARFAX_API_URL', default='https://api.carfax.com/v1')
+CARFAX_CACHE_TTL = config('CARFAX_CACHE_TTL', default=604800, cast=int)  # 7 days
+AUTOCHECK_API_KEY = config('AUTOCHECK_API_KEY', default=None)
+ICBC_API_KEY = config('ICBC_API_KEY', default=None)  # British Columbia
+MTO_API_KEY = config('MTO_API_KEY', default=None)  # Ontario
+SAAQ_API_KEY = config('SAAQ_API_KEY', default=None)  # Quebec
 
-# Email Configuration (Development - Console Backend)
+# WhatsApp Business API Configuration
+WHATSAPP_API_TOKEN = config('WHATSAPP_API_TOKEN', default=None)
+WHATSAPP_PHONE_NUMBER_ID = config('WHATSAPP_PHONE_NUMBER_ID', default=None)
+WHATSAPP_VERIFY_TOKEN = config('WHATSAPP_VERIFY_TOKEN', default=None)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@nzilaventures.com')
 ADMIN_EMAIL = config('ADMIN_EMAIL', default='info@nzilaventures.com')
@@ -234,6 +269,25 @@ ADMIN_EMAIL = config('ADMIN_EMAIL', default='info@nzilaventures.com')
 # Exchange Rate API Configuration
 # Get free API key from: https://www.exchangerate-api.com/
 EXCHANGE_RATE_API_KEY = config('EXCHANGE_RATE_API_KEY', default=None)
+
+# Canadian Vehicle Data API Configuration
+CARFAX_API_KEY = config('CARFAX_API_KEY', default=None)
+AUTOCHECK_API_KEY = config('AUTOCHECK_API_KEY', default=None)
+ICBC_API_KEY = config('ICBC_API_KEY', default=None)  # British Columbia
+MTO_API_KEY = config('MTO_API_KEY', default=None)  # Ontario
+SAAQ_API_KEY = config('SAAQ_API_KEY', default=None)  # Quebec
+
+# Lloyd's Register Cargo Tracking Service (CTS) Configuration
+# For world-class marine cargo certification and third-party verification
+# Register at: https://www.lr.org/en/services/cargo-tracking/
+LLOYD_REGISTER_API_KEY = config('LLOYD_REGISTER_API_KEY', default=None)
+LLOYD_REGISTER_CLIENT_ID = config('LLOYD_REGISTER_CLIENT_ID', default=None)
+LLOYD_REGISTER_API_URL = config('LLOYD_REGISTER_API_URL', 
+                                default='https://api.lr.org/cargo-tracking/v1')
+
+# ISO 28000 Security Management Configuration
+ISO_28000_ENABLED = config('ISO_28000_ENABLED', default=True, cast=bool)
+CTPAT_COMPLIANCE_ENABLED = config('CTPAT_COMPLIANCE_ENABLED', default=True, cast=bool)
 
 # Sentry Configuration - Error Tracking & Performance Monitoring
 import sentry_sdk

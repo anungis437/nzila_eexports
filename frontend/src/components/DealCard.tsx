@@ -1,6 +1,7 @@
 import { Deal } from '../types'
 import { useLanguage } from '../contexts/LanguageContext'
-import { Car, User, DollarSign, Calendar, FileText, CheckCircle, Clock } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import { Car, User, DollarSign, Calendar, FileText, CheckCircle, Clock, Package, Truck } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { enUS, fr } from 'date-fns/locale'
 
@@ -11,7 +12,9 @@ interface DealCardProps {
 
 export default function DealCard({ deal, onClick }: DealCardProps) {
   const { language, formatCurrency } = useLanguage()
+  const { user } = useAuth()
   const locale = language === 'fr' ? fr : enUS
+  const isBuyer = user?.role === 'buyer'
 
   const getStatusColor = (status: Deal['status']) => {
     const colors = {
@@ -28,6 +31,20 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
   }
 
   const getStatusLabel = (status: Deal['status']) => {
+    if (isBuyer) {
+      const buyerLabels = {
+        pending_docs: language === 'fr' ? 'Documents requis' : 'Documents Needed',
+        docs_verified: language === 'fr' ? 'Vérification complétée' : 'Verification Complete',
+        payment_pending: language === 'fr' ? 'En attente de paiement' : 'Awaiting Payment',
+        payment_received: language === 'fr' ? 'Paiement confirmé' : 'Payment Confirmed',
+        ready_to_ship: language === 'fr' ? 'Prêt pour expédition' : 'Ready for Shipping',
+        shipped: language === 'fr' ? 'En transit' : 'In Transit',
+        completed: language === 'fr' ? 'Livré' : 'Delivered',
+        cancelled: language === 'fr' ? 'Annulé' : 'Cancelled',
+      }
+      return buyerLabels[status] || status
+    }
+    
     const labels = {
       pending_docs: language === 'fr' ? 'En attente docs' : 'Pending Docs',
       docs_verified: language === 'fr' ? 'Docs vérifiés' : 'Docs Verified',
@@ -45,6 +62,17 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
     if (status === 'paid') return <CheckCircle className="w-4 h-4 text-green-600" />
     if (status === 'partial') return <Clock className="w-4 h-4 text-amber-600" />
     return <Clock className="w-4 h-4 text-slate-400" />
+  }
+  
+  const getPaymentStatusLabel = (status: Deal['payment_status']) => {
+    const labels = {
+      pending: language === 'fr' ? 'En attente' : 'Pending',
+      partial: language === 'fr' ? 'Partiel' : 'Partial',
+      paid: language === 'fr' ? 'Payé' : 'Paid',
+      refunded: language === 'fr' ? 'Remboursé' : 'Refunded',
+      failed: language === 'fr' ? 'Échoué' : 'Failed',
+    }
+    return labels[status] || status
   }
 
   const getProgressPercentage = (status: Deal['status']) => {
@@ -71,7 +99,13 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
       {/* Progress Bar */}
       <div className="h-1 bg-slate-100">
         <div
-          className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-500"
+          className={`h-full transition-all duration-500 ${
+            deal.status === 'completed'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+              : deal.status === 'cancelled'
+              ? 'bg-gradient-to-r from-red-500 to-red-600'
+              : 'bg-gradient-to-r from-amber-500 to-amber-600'
+          }`}
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -82,15 +116,20 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-slate-900 group-hover:text-amber-600 transition-colors">
-                {language === 'fr' ? 'Transaction' : 'Deal'} #{deal.id}
+                {isBuyer
+                  ? (language === 'fr' ? 'Achat' : 'Purchase') + ` #${deal.id}`
+                  : (language === 'fr' ? 'Transaction' : 'Deal') + ` #${deal.id}`
+                }
               </h3>
               <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(deal.status)}`}>
                 {getStatusLabel(deal.status)}
               </span>
             </div>
-            <p className="text-xs text-slate-500">
-              {deal.buyer_name || `Buyer #${deal.buyer}`}
-            </p>
+            {!isBuyer && (
+              <p className="text-xs text-slate-500">
+                {deal.buyer_name || `Buyer #${deal.buyer}`}
+              </p>
+            )}
           </div>
         </div>
 
@@ -115,7 +154,7 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
           <div className="flex items-center gap-1">
             {getPaymentStatusIcon(deal.payment_status)}
             <span className="text-xs text-slate-600 capitalize">
-              {deal.payment_status}
+              {getPaymentStatusLabel(deal.payment_status)}
             </span>
           </div>
         </div>

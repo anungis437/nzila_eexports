@@ -69,6 +69,69 @@ class User(AbstractUser):
         verbose_name=_('Phone Verified')
     )
     
+    # PIPEDA & Law 25 Compliance - Explicit Consent Tracking
+    data_processing_consent = models.BooleanField(
+        default=False,
+        verbose_name=_('Data Processing Consent'),
+        help_text=_('User has consented to processing of personal information (PIPEDA Principle 3)')
+    )
+    marketing_consent = models.BooleanField(
+        default=False,
+        verbose_name=_('Marketing Communications Consent'),
+        help_text=_('User has consented to receive marketing communications (Law 25 Article 8)')
+    )
+    third_party_sharing_consent = models.BooleanField(
+        default=False,
+        verbose_name=_('Third Party Sharing Consent'),
+        help_text=_('User has consented to sharing data with brokers/partners across borders')
+    )
+    consent_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('Consent Date'),
+        help_text=_('Date when user provided explicit consent')
+    )
+    consent_ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name=_('Consent IP Address'),
+        help_text=_('IP address from which consent was provided (audit trail)')
+    )
+    consent_version = models.CharField(
+        max_length=20,
+        blank=True,
+        default='1.0',
+        verbose_name=_('Consent Version'),
+        help_text=_('Version of privacy policy user consented to')
+    )
+    
+    # Data Subject Rights (Law 25 Articles 8-41)
+    data_export_requested_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('Data Export Requested'),
+        help_text=_('When user requested data export (Law 25 Article 8.5)')
+    )
+    data_deletion_requested_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('Data Deletion Requested'),
+        help_text=_('When user requested account deletion (Law 25 Article 28)')
+    )
+    data_rectification_requested_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('Data Rectification Requested'),
+        help_text=_('When user requested data correction')
+    )
+    
+    # Cross-border Data Transfer (PIPEDA & Law 25)
+    data_transfer_consent_africa = models.BooleanField(
+        default=False,
+        verbose_name=_('Africa Data Transfer Consent'),
+        help_text=_('Consent for transferring personal info to African brokers (PIPEDA Principle 4.1.3)')
+    )
+    
     def is_admin(self):
         return self.role == 'admin' or self.is_superuser
     

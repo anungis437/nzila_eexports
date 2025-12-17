@@ -1,0 +1,60 @@
+{% extends "email_templates/base.html" %}
+
+{% block content %}
+    <h1 class="greeting">Deal Status Update</h1>
+    
+    <p class="message">
+        Hi {{ buyer_name }},
+    </p>
+    
+    <p class="message">
+        We wanted to keep you updated on your deal for the <strong>{{ vehicle_info }}</strong>.
+    </p>
+    
+    <div class="info-box">
+        <h3>📋 Deal Information</h3>
+        <p><strong>Deal ID:</strong> #{{ deal_id }}</p>
+        <p><strong>Vehicle:</strong> {{ vehicle_info }}</p>
+        <p><strong>Current Status:</strong> <span style="color: #2563eb; font-weight: 600;">{{ status|title }}</span></p>
+    </div>
+    
+    {% if status == 'pending' %}
+        <p class="message">
+            Your deal is currently pending. We're reviewing all the details and will update you once we have more information.
+        </p>
+    {% elif status == 'approved' %}
+        <p class="message">
+            Great news! Your deal has been approved. You can now proceed with payment to move forward.
+        </p>
+    {% elif status == 'payment_pending' %}
+        <p class="message">
+            We're waiting for your payment to complete the deal. Please make sure to process payment at your earliest convenience.
+        </p>
+    {% elif status == 'paid' %}
+        <p class="message">
+            Payment received! We're now processing your vehicle for shipment. You'll receive tracking information soon.
+        </p>
+    {% elif status == 'shipped' %}
+        <p class="message">
+            Your vehicle has been shipped! Check your deal page for tracking details and estimated delivery date.
+        </p>
+    {% elif status == 'delivered' %}
+        <p class="message">
+            Congratulations! Your vehicle has been delivered. We hope you're satisfied with your purchase from Nzila Exports!
+        </p>
+    {% elif status == 'cancelled' %}
+        <p class="message">
+            This deal has been cancelled. If you have any questions or would like to explore other options, please contact our support team.
+        </p>
+    {% endif %}
+    
+    <div style="text-align: center;">
+        <a href="{{ deal_url }}" class="cta-button">View Deal Details</a>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <p class="message" style="font-size: 14px;">
+        If you have any questions about your deal or need assistance, please don't hesitate to reach out to our team.
+    </p>
+{% endblock %}

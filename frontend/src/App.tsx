@@ -2,9 +2,11 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { AuthProvider } from './contexts/AuthContext'
+import { ComparisonProvider } from './context/ComparisonContext'
 import { Toaster } from './components/ui/toaster'
 import Routes from './Routes'
 import SentryTestPanel from './components/SentryTestButton'
+import ComparisonBar from './components/ComparisonBar'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,10 +24,13 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <LanguageProvider>
-            <Routes />
-            <Toaster />
-            {/* Sentry test panel - only shows in development */}
-            {import.meta.env.DEV && <SentryTestPanel />}
+            <ComparisonProvider>
+              <Routes />
+              <ComparisonBar />
+              <Toaster />
+              {/* Sentry test panel - only shows in development */}
+              {import.meta.env.DEV && <SentryTestPanel />}
+            </ComparisonProvider>
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>

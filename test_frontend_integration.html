@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tier 1 Features - Frontend Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.success { background: #4CAF50; color: white; }
+        .status.error { background: #f44336; color: white; }
+        .status.pending { background: #ff9800; color: white; }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0b7dda; }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+        }
+        .endpoint {
+            font-family: monospace;
+            background: #e8f5e9;
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Tier 1 Features - Frontend Integration Test</h1>
+    <p>Testing API connectivity from frontend to backend on <strong>localhost:8000</strong></p>
+
+    <!-- Reviews & Ratings -->
+    <div class="test-section">
+        <h2>⭐ Reviews & Ratings API</h2>
+        <button onclick="testReviews()">Test Reviews List</button>
+        <button onclick="testFeaturedReviews()">Test Featured Reviews</button>
+        <button onclick="testDealerRatings()">Test Dealer Ratings</button>
+        <div id="reviews-result"></div>
+    </div>
+
+    <!-- Shipment Tracking -->
+    <div class="test-section">
+        <h2>📦 Shipment Tracking API</h2>
+        <p><strong>Note:</strong> These endpoints require authentication</p>
+        <button onclick="testShipments()">Test Shipments List</button>
+        <button onclick="testTrackShipment()">Track Shipment (TRK826311)</button>
+        <div id="shipments-result"></div>
+    </div>
+
+    <!-- Video Walkarounds -->
+    <div class="test-section">
+        <h2>🎥 Video Walkarounds API</h2>
+        <p><strong>Note:</strong> These endpoints require authentication</p>
+        <button onclick="testVehicleVideos()">Test Vehicle Videos</button>
+        <div id="videos-result"></div>
+    </div>
+
+    <!-- Server Status -->
+    <div class="test-section">
+        <h2>🖥️ Server Status</h2>
+        <button onclick="checkServers()">Check All Servers</button>
+        <div id="server-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+
+        async function testAPI(url, elementId, description) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.innerHTML = `<p>Testing ${description}... <span class="status pending">LOADING</span></p>`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p><span class="endpoint">${url}</span> <span class="status success">✓ ${response.status}</span></p>
+                        <p><strong>Results:</strong> ${JSON.stringify(data).length > 1000 ? 
+                            `${Array.isArray(data) ? data.length : (data.results ? data.results.length : 'N/A')} items` : 
+                            ''}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p><span class="endpoint">${url}</span> <span class="status error">✗ ${response.status}</span></p>
+                        <p><strong>Error:</strong> ${data.detail || JSON.stringify(data)}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p><span class="endpoint">${url}</span> <span class="status error">✗ ERROR</span></p>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                `;
+            }
+        }
+
+        function testReviews() {
+            testAPI(`${API_BASE}/reviews/`, 'reviews-result', 'Reviews List');
+        }
+
+        function testFeaturedReviews() {
+            testAPI(`${API_BASE}/reviews/featured/`, 'reviews-result', 'Featured Reviews');
+        }
+
+        function testDealerRatings() {
+            testAPI(`${API_BASE}/dealer-ratings/`, 'reviews-result', 'Dealer Ratings');
+        }
+
+        function testShipments() {
+            testAPI(`${API_BASE}/shipments/`, 'shipments-result', 'Shipments List');
+        }
+
+        function testTrackShipment() {
+            testAPI(`${API_BASE}/shipments/TRK826311/track/`, 'shipments-result', 'Track Shipment');
+        }
+
+        function testVehicleVideos() {
+            testAPI(`${API_BASE}/vehicles/1/videos/`, 'videos-result', 'Vehicle Videos');
+        }
+
+        async function checkServers() {
+            const resultDiv = document.getElementById('server-result');
+            resultDiv.innerHTML = '<p>Checking servers... <span class="status pending">LOADING</span></p>';
+            
+            const checks = [
+                { name: 'Backend API', url: 'http://localhost:8000/api/reviews/' },
+                { name: 'Frontend', url: 'http://localhost:5173/' },
+                { name: 'Frontend (Alt)', url: 'http://localhost:5174/' }
+            ];
+            
+            let html = '<h3>Server Status:</h3><ul>';
+            
+            for (const check of checks) {
+                try {
+                    const response = await fetch(check.url, { method: 'HEAD' });
+                    html += `<li>${check.name}: <span class="status success">✓ Running (${response.status})</span></li>`;
+                } catch (error) {
+                    html += `<li>${check.name}: <span class="status error">✗ Not responding</span></li>`;
+                }
+            }
+            
+            html += '</ul>';
+            resultDiv.innerHTML = html;
+        }
+
+        // Auto-check servers on load
+        window.onload = () => {
+            checkServers();
+        };
+    </script>
+</body>
+</html>

@@ -40,6 +40,7 @@ export interface VehicleImage {
   id: number
   vehicle: number
   image: string
+  caption?: string
   is_primary: boolean
   order: number
   created_at: string

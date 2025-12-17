@@ -1,0 +1,58 @@
+{% extends "email_templates/base.html" %}
+
+{% block content %}
+<p style="margin: 0 0 16px; color: #475569; font-size: 16px; line-height: 1.5;">
+  Hi {{ user_name }},
+</p>
+
+<p style="margin: 0 0 24px; color: #475569; font-size: 16px; line-height: 1.5;">
+  Here's your daily digest! We found <strong>{{ total_vehicles }} new vehicle{{ total_vehicles|pluralize }}</strong> matching your saved searches.
+</p>
+
+<!-- Searches -->
+{% for search in searches %}
+<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 0 0 24px; background: #ffffff;">
+  <h2 style="color: #1e293b; font-size: 18px; font-weight: 600; margin: 0 0 8px;">
+    {{ search.name }}
+  </h2>
+  <p style="margin: 0 0 16px; color: #64748b; font-size: 14px;">
+    {{ search.criteria }} • <strong>{{ search.count }} new vehicle{{ search.count|pluralize }}</strong>
+  </p>
+  
+  {% for vehicle in search.vehicles %}
+  <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; margin-top: 12px;">
+    <p style="margin: 0 0 4px; color: #1e293b; font-size: 16px; font-weight: 600;">
+      {{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}
+    </p>
+    <p style="margin: 0; color: #64748b; font-size: 14px;">
+      ${{ vehicle.price|floatformat:0 }} • VIN: {{ vehicle.vin }}
+    </p>
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+
+<!-- CTA Button -->
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+  <tr>
+    <td align="center">
+      <a href="http://localhost:5173/buyer-portal" 
+         style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
+                color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; 
+                font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);">
+        Browse All Vehicles
+      </a>
+    </td>
+  </tr>
+</table>
+
+<!-- Manage Settings -->
+<p style="margin: 0; color: #94a3b8; font-size: 14px; text-align: center;">
+  <a href="http://localhost:5173/saved-searches" style="color: #3b82f6; text-decoration: underline;">
+    Manage your saved searches
+  </a> or 
+  <a href="http://localhost:5173/saved-searches" style="color: #3b82f6; text-decoration: underline;">
+    adjust notification settings
+  </a>
+</p>
+{% endblock %}

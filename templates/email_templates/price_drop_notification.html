@@ -1,0 +1,87 @@
+{% extends "email_templates/base.html" %}
+
+{% block content %}
+<div style="padding: 30px 0;">
+    <!-- Header -->
+    <h1 style="color: #1e3a8a; font-size: 28px; margin-bottom: 10px; font-weight: 600;">
+        🎉 Price Drop Alert!
+    </h1>
+    <p style="color: #64748b; font-size: 16px; margin-bottom: 30px;">
+        Great news! A vehicle you're watching has dropped in price.
+    </p>
+
+    <!-- Price Drop Badge -->
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; padding: 20px; margin-bottom: 30px; text-align: center;">
+        <p style="color: white; font-size: 16px; margin: 0 0 10px 0;">You could save</p>
+        <p style="color: white; font-size: 42px; font-weight: bold; margin: 0;">${{ amount_saved }}</p>
+        <p style="color: white; font-size: 18px; margin: 10px 0 0 0;">{{ percentage }}% off</p>
+    </div>
+
+    <!-- Vehicle Details -->
+    <div style="background-color: #f8fafc; border-radius: 12px; padding: 25px; margin-bottom: 30px;">
+        <h2 style="color: #1e3a8a; font-size: 22px; margin: 0 0 20px 0; font-weight: 600;">
+            {{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}
+        </h2>
+        
+        {% if vehicle.images.first %}
+        <img src="{{ vehicle.images.first.image.url }}" alt="{{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}" 
+             style="width: 100%; max-width: 500px; height: auto; border-radius: 8px; margin-bottom: 20px; display: block;">
+        {% endif %}
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+            <div>
+                <p style="color: #64748b; font-size: 14px; margin: 0;">VIN</p>
+                <p style="color: #1e293b; font-size: 16px; font-weight: 600; margin: 5px 0 0 0;">{{ vehicle.vin }}</p>
+            </div>
+            <div>
+                <p style="color: #64748b; font-size: 14px; margin: 0;">Condition</p>
+                <p style="color: #1e293b; font-size: 16px; font-weight: 600; margin: 5px 0 0 0;">{{ vehicle.get_condition_display }}</p>
+            </div>
+            <div>
+                <p style="color: #64748b; font-size: 14px; margin: 0;">Mileage</p>
+                <p style="color: #1e293b; font-size: 16px; font-weight: 600; margin: 5px 0 0 0;">{{ vehicle.mileage|floatformat:0 }} miles</p>
+            </div>
+            <div>
+                <p style="color: #64748b; font-size: 14px; margin: 0;">Location</p>
+                <p style="color: #1e293b; font-size: 16px; font-weight: 600; margin: 5px 0 0 0;">{{ vehicle.location }}</p>
+            </div>
+        </div>
+
+        <!-- Price Comparison -->
+        <div style="border-top: 2px solid #e2e8f0; padding-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div>
+                    <p style="color: #64748b; font-size: 14px; margin: 0;">Previous Price</p>
+                    <p style="color: #94a3b8; font-size: 24px; font-weight: 600; margin: 5px 0 0 0; text-decoration: line-through;">${{ old_price }}</p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="color: #64748b; font-size: 14px; margin: 0;">New Price</p>
+                    <p style="color: #10b981; font-size: 32px; font-weight: bold; margin: 5px 0 0 0;">${{ new_price }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{ vehicle_url }}" 
+           style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">
+            View Vehicle Details
+        </a>
+    </div>
+
+    <!-- Info Box -->
+    <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; border-radius: 8px; padding: 20px; margin-top: 30px;">
+        <p style="color: #1e3a8a; font-size: 14px; margin: 0; line-height: 1.6;">
+            <strong>💡 Pro Tip:</strong> Price drops like this don't last long! Vehicles in high demand are typically purchased within 24-48 hours of a price reduction.
+        </p>
+    </div>
+
+    <!-- Footer Note -->
+    <p style="color: #94a3b8; font-size: 14px; text-align: center; margin-top: 30px;">
+        You're receiving this because you added this vehicle to your favorites.
+        <br>
+        <a href="{{ settings_url }}" style="color: #2563eb; text-decoration: none;">Manage your notification preferences</a>
+    </p>
+</div>
+{% endblock %}

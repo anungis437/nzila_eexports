@@ -11,8 +11,14 @@ import {
   Eye,
   Filter,
   Search,
+  HelpCircle,
+  CreditCard,
+  Smartphone,
+  AlertCircle,
+  CheckSquare,
 } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useAuth } from '../contexts/AuthContext'
 import api from '../lib/api'
 import { Button } from '../components/ui/button'
 
@@ -36,12 +42,16 @@ interface DocumentsProps {
 
 export default function Documents({ dealId, showUpload = true }: DocumentsProps) {
   const { language } = useLanguage()
+  const { user } = useAuth()
   const queryClient = useQueryClient()
   const [selectedType, setSelectedType] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
   const [viewDocument, setViewDocument] = useState<Document | null>(null)
+  const [showHelp, setShowHelp] = useState(true)
+  
+  const isBuyer = user?.role === 'buyer'
 
   // Fetch documents
   const { data: documents = [], isLoading } = useQuery({
@@ -55,14 +65,62 @@ export default function Documents({ dealId, showUpload = true }: DocumentsProps)
     },
   })
 
-  // Document types
+  // Document types with buyer-friendly descriptions
   const documentTypes = [
-    { value: 'title', label: language === 'fr' ? 'Titre de véhicule' : 'Vehicle Title' },
-    { value: 'id', label: language === 'fr' ? 'Pièce d\'identité' : 'ID Document' },
-    { value: 'payment_proof', label: language === 'fr' ? 'Preuve de paiement' : 'Payment Proof' },
-    { value: 'export_permit', label: language === 'fr' ? 'Permis d\'exportation' : 'Export Permit' },
-    { value: 'customs', label: language === 'fr' ? 'Déclaration en douane' : 'Customs Declaration' },
-    { value: 'other', label: language === 'fr' ? 'Autre' : 'Other' },
+    { 
+      value: 'id', 
+      label: language === 'fr' ? 'Pièce d\'identité' : 'ID Document',
+      description: language === 'fr' 
+        ? 'Passeport, carte d\'identité nationale, ou permis de conduire' 
+        : 'Passport, national ID card, or driver\'s license',
+      icon: FileText,
+      required: true
+    },
+    { 
+      value: 'payment_proof', 
+      label: language === 'fr' ? 'Preuve de paiement' : 'Payment Proof',
+      description: language === 'fr'
+        ? 'Reçu de virement bancaire, capture d\'écran mobile money (M-Pesa, Orange Money, etc.), ou confirmation de paiement'
+        : 'Bank transfer receipt, mobile money screenshot (M-Pesa, Orange Money, etc.), or payment confirmation',
+      icon: CreditCard,
+      required: true
+    },
+    { 
+      value: 'title', 
+      label: language === 'fr' ? 'Documents du véhicule' : 'Vehicle Documents',
+      description: language === 'fr'
+        ? 'Fourni par le vendeur - titre du véhicule et certificat d\'inspection'
+        : 'Provided by seller - vehicle title and inspection certificate',
+      icon: FileText,
+      required: false
+    },
+    { 
+      value: 'export_permit', 
+      label: language === 'fr' ? 'Permis d\'exportation' : 'Export Permit',
+      description: language === 'fr'
+        ? 'Nous vous aiderons à l\'obtenir - téléchargez quand disponible'
+        : 'We\'ll help you obtain this - upload when available',
+      icon: FileText,
+      required: false
+    },
+    { 
+      value: 'customs', 
+      label: language === 'fr' ? 'Déclaration en douane' : 'Customs Declaration',
+      description: language === 'fr'
+        ? 'Nécessaire pour le dédouanement dans votre pays'
+        : 'Required for customs clearance in your country',
+      icon: FileText,
+      required: false
+    },
+    { 
+      value: 'other', 
+      label: language === 'fr' ? 'Autre document' : 'Other Document',
+      description: language === 'fr'
+        ? 'Tout autre document demandé par notre équipe'
+        : 'Any other document requested by our team',
+      icon: FileText,
+      required: false
+    },
   ]
 
   // Status options
@@ -142,21 +200,120 @@ export default function Documents({ dealId, showUpload = true }: DocumentsProps)
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">
-            {language === 'fr' ? 'Documents' : 'Documents'}
+            {isBuyer 
+              ? (language === 'fr' ? 'Mes Documents' : 'My Documents')
+              : (language === 'fr' ? 'Documents' : 'Documents')}
           </h2>
           <p className="text-slate-600 mt-1">
-            {language === 'fr'
-              ? 'Gérez les documents du deal'
-              : 'Manage deal documents'}
+            {isBuyer
+              ? (language === 'fr'
+                ? 'Téléchargez vos documents pour finaliser votre achat'
+                : 'Upload your documents to finalize your purchase')
+              : (language === 'fr'
+                ? 'Gérez les documents du deal'
+                : 'Manage deal documents')}
           </p>
         </div>
         {showUpload && (
-          <Button onClick={() => setUploadModalOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            {language === 'fr' ? 'Télécharger' : 'Upload'}
+          <Button onClick={() => setUploadModalOpen(true)} size="lg">
+            <Upload className="w-5 h-5 mr-2" />
+            {language === 'fr' ? 'Télécharger un document' : 'Upload Document'}
           </Button>
         )}
       </div>
+
+      {/* Buyer Help Section - Simplified Process */}
+      {isBuyer && showHelp && filteredDocuments.length === 0 && (
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                <HelpCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  {language === 'fr' ? 'Commençons simplement' : 'Let\'s Get Started Simply'}
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {language === 'fr' 
+                    ? 'Seulement 2 documents nécessaires pour commencer'
+                    : 'Only 2 documents needed to get started'}
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Required Document 1: ID */}
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckSquare className="w-4 h-4 text-green-600" />
+                </div>
+                <h4 className="font-semibold text-slate-900">
+                  {language === 'fr' ? '1. Pièce d\'identité' : '1. Your ID'}
+                </h4>
+              </div>
+              <p className="text-sm text-slate-600 mb-3">
+                {language === 'fr'
+                  ? 'Photo claire de votre passeport, carte d\'identité, ou permis de conduire'
+                  : 'Clear photo of your passport, ID card, or driver\'s license'}
+              </p>
+              <div className="flex items-start gap-2 text-xs text-slate-500">
+                <Smartphone className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>
+                  {language === 'fr'
+                    ? 'Utilisez votre téléphone - une photo claire suffit'
+                    : 'Use your phone - a clear photo is enough'}
+                </span>
+              </div>
+            </div>
+
+            {/* Required Document 2: Payment Proof */}
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckSquare className="w-4 h-4 text-green-600" />
+                </div>
+                <h4 className="font-semibold text-slate-900">
+                  {language === 'fr' ? '2. Preuve de paiement' : '2. Payment Proof'}
+                </h4>
+              </div>
+              <p className="text-sm text-slate-600 mb-3">
+                {language === 'fr'
+                  ? 'Reçu de virement ou capture d\'écran de mobile money'
+                  : 'Bank receipt or mobile money screenshot'}
+              </p>
+              <div className="flex items-start gap-2 text-xs text-slate-500 mb-2">
+                <CreditCard className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>
+                  {language === 'fr'
+                    ? 'M-Pesa, Orange Money, MTN, Airtel - tous acceptés'
+                    : 'M-Pesa, Orange Money, MTN, Airtel - all accepted'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-amber-800">
+                <strong>{language === 'fr' ? 'Astuce:' : 'Tip:'}</strong>{' '}
+                {language === 'fr'
+                  ? 'C\'est tout ce dont vous avez besoin pour l\'instant ! Nous gérons le reste du processus pour vous.'
+                  : 'That\'s all you need for now! We handle the rest of the process for you.'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
@@ -221,81 +378,142 @@ export default function Documents({ dealId, showUpload = true }: DocumentsProps)
           ))}
         </div>
       ) : filteredDocuments.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-12 text-center">
-          <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
-            {language === 'fr' ? 'Aucun document' : 'No Documents'}
+        <div className="bg-white rounded-lg shadow-sm border-2 border-dashed border-slate-300 p-12 text-center">
+          <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-10 h-10 text-blue-500" />
+          </div>
+          <h3 className="text-xl font-semibold text-slate-900 mb-2">
+            {isBuyer
+              ? (language === 'fr' ? 'Prêt à commencer ?' : 'Ready to Get Started?')
+              : (language === 'fr' ? 'Aucun document' : 'No Documents')}
           </h3>
-          <p className="text-slate-600 mb-4">
-            {language === 'fr'
-              ? 'Aucun document trouvé pour ce deal'
-              : 'No documents found for this deal'}
+          <p className="text-slate-600 mb-6 max-w-md mx-auto">
+            {isBuyer
+              ? (language === 'fr'
+                ? 'Téléchargez votre pièce d\'identité et preuve de paiement pour finaliser votre achat. C\'est simple et rapide !'
+                : 'Upload your ID and payment proof to finalize your purchase. It\'s simple and quick!')
+              : (language === 'fr'
+                ? 'Aucun document trouvé pour ce deal'
+                : 'No documents found for this deal')}
           </p>
           {showUpload && (
-            <Button onClick={() => setUploadModalOpen(true)}>
-              <Upload className="w-4 h-4 mr-2" />
-              {language === 'fr' ? 'Télécharger le premier document' : 'Upload First Document'}
+            <Button onClick={() => setUploadModalOpen(true)} size="lg" className="mx-auto">
+              <Upload className="w-5 h-5 mr-2" />
+              {isBuyer
+                ? (language === 'fr' ? 'Télécharger mes documents' : 'Upload My Documents')
+                : (language === 'fr' ? 'Télécharger le premier document' : 'Upload First Document')}
             </Button>
           )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDocuments.map((doc: Document) => (
-            <div
-              key={doc.id}
-              className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow"
-            >
-              {/* Document icon and status */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-blue-600" />
+          {filteredDocuments.map((doc: Document) => {
+            const docType = documentTypes.find((t) => t.value === doc.document_type)
+            const DocIcon = docType?.icon || FileText
+            
+            return (
+              <div
+                key={doc.id}
+                className={`bg-white rounded-lg shadow-sm border-2 p-6 hover:shadow-md transition-all ${
+                  doc.status === 'verified' 
+                    ? 'border-green-200 bg-green-50/30' 
+                    : doc.status === 'rejected'
+                    ? 'border-red-200 bg-red-50/30'
+                    : 'border-slate-200'
+                }`}
+              >
+                {/* Document icon and status */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                    doc.status === 'verified' 
+                      ? 'bg-green-100' 
+                      : doc.status === 'rejected'
+                      ? 'bg-red-100'
+                      : 'bg-blue-100'
+                  }`}>
+                    <DocIcon className={`w-6 h-6 ${
+                      doc.status === 'verified' 
+                        ? 'text-green-600' 
+                        : doc.status === 'rejected'
+                        ? 'text-red-600'
+                        : 'text-blue-600'
+                    }`} />
+                  </div>
+                  {getStatusIcon(doc.status)}
                 </div>
-                {getStatusIcon(doc.status)}
-              </div>
 
-              {/* Document info */}
-              <h3 className="font-semibold text-slate-900 mb-2">
-                {documentTypes.find((t) => t.value === doc.document_type)?.label || doc.document_type}
-              </h3>
-              <div className="flex items-center gap-2 mb-4">
-                {getStatusBadge(doc.status)}
-              </div>
+                {/* Document info */}
+                <h3 className="font-semibold text-slate-900 mb-1">
+                  {docType?.label || doc.document_type}
+                </h3>
+                
+                {/* Buyer-friendly description */}
+                {isBuyer && docType?.description && (
+                  <p className="text-xs text-slate-500 mb-3">
+                    {docType.description}
+                  </p>
+                )}
+                
+                <div className="flex items-center gap-2 mb-3">
+                  {getStatusBadge(doc.status)}
+                </div>
 
-              {/* Date */}
-              <p className="text-xs text-slate-500 mb-4">
-                {language === 'fr' ? 'Téléchargé' : 'Uploaded'}{' '}
-                {new Date(doc.uploaded_at).toLocaleDateString()}
-              </p>
+                {/* Buyer-friendly status message */}
+                {isBuyer && (
+                  <div className="mb-3 p-2 rounded-lg bg-slate-50 border border-slate-200">
+                    <p className="text-xs text-slate-700">
+                      {doc.status === 'verified' && (
+                        <>{language === 'fr' ? '✅ Document approuvé' : '✅ Document approved'}</>
+                      )}
+                      {doc.status === 'pending' && (
+                        <>{language === 'fr' ? '⏳ En cours de vérification (1-2 jours)' : '⏳ Under review (1-2 days)'}</>
+                      )}
+                      {doc.status === 'rejected' && (
+                        <>{language === 'fr' ? '❌ Veuillez télécharger à nouveau' : '❌ Please re-upload'}</>
+                      )}
+                    </p>
+                  </div>
+                )}
 
-              {/* Actions */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setViewDocument(doc)}
-                  className="flex-1"
-                >
-                  <Eye className="w-4 h-4 mr-1" />
-                  {language === 'fr' ? 'Voir' : 'View'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(doc.file, '_blank')}
-                >
-                  <Download className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(doc.id)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </Button>
+                {/* Date */}
+                <p className="text-xs text-slate-500 mb-4">
+                  {language === 'fr' ? 'Téléchargé' : 'Uploaded'}{' '}
+                  {new Date(doc.uploaded_at).toLocaleDateString()}
+                </p>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewDocument(doc)}
+                    className="flex-1"
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    {language === 'fr' ? 'Voir' : 'View'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(doc.file, '_blank')}
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                  {/* Only show delete for pending docs or non-buyers */}
+                  {(!isBuyer || doc.status === 'pending' || doc.status === 'rejected') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(doc.id)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

@@ -110,6 +110,24 @@ class Deal(models.Model):
         ('cancelled', _('Cancelled')),
     ]
     
+    PAYMENT_METHOD_CHOICES = [
+        ('bank_transfer', _('Bank Transfer')),
+        ('credit_card', _('Credit Card')),
+        ('wire', _('Wire Transfer')),
+        ('mobile_money', _('Mobile Money')),
+        ('cash', _('Cash')),
+        ('crypto', _('Cryptocurrency')),
+        ('financing', _('Financing')),
+    ]
+    
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', _('Pending')),
+        ('partial', _('Partial Payment')),
+        ('paid', _('Fully Paid')),
+        ('refunded', _('Refunded')),
+        ('failed', _('Failed')),
+    ]
+    
     lead = models.OneToOneField(
         Lead,
         on_delete=models.CASCADE,
@@ -160,6 +178,21 @@ class Deal(models.Model):
         max_digits=10,
         decimal_places=2,
         verbose_name=_('Agreed Price (CAD)')
+    )
+    
+    # Payment Information
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name=_('Payment Method')
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='pending',
+        verbose_name=_('Payment Status')
     )
     
     # Timestamps

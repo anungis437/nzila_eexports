@@ -1,0 +1,86 @@
+{% extends "email_templates/base.html" %}
+
+{% block content %}
+<p style="margin: 0 0 16px; color: #475569; font-size: 16px; line-height: 1.5;">
+  Hi {{ user_name }},
+</p>
+
+<p style="margin: 0 0 24px; color: #475569; font-size: 16px; line-height: 1.5;">
+  Great news! We found <strong>{{ vehicle_count }} new vehicle{{ vehicle_count|pluralize }}</strong> matching your saved search "<strong>{{ search_name }}</strong>".
+</p>
+
+<!-- Search Criteria Box -->
+<div style="background: #f1f5f9; border-left: 4px solid #3b82f6; padding: 16px; margin: 0 0 24px; border-radius: 4px;">
+  <p style="margin: 0; color: #64748b; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+    Your Search Criteria
+  </p>
+  <p style="margin: 8px 0 0; color: #1e293b; font-size: 16px;">
+    {{ search_criteria }}
+  </p>
+</div>
+
+<!-- Vehicle List -->
+<h2 style="color: #1e293b; font-size: 20px; font-weight: 600; margin: 0 0 16px;">
+  New Matches:
+</h2>
+
+{% for vehicle in vehicles %}
+<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 0 0 16px; background: #ffffff;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+    <tr>
+      {% if vehicle.image %}
+      <td width="120" style="vertical-align: top; padding-right: 16px;">
+        <img src="{{ vehicle.image }}" alt="{{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}" 
+             style="width: 100px; height: 75px; object-fit: cover; border-radius: 4px; display: block;">
+      </td>
+      {% endif %}
+      <td style="vertical-align: top;">
+        <h3 style="margin: 0 0 8px; color: #1e293b; font-size: 18px; font-weight: 600;">
+          {{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}
+        </h3>
+        <p style="margin: 0 0 4px; color: #64748b; font-size: 14px;">
+          <strong>Price:</strong> ${{ vehicle.price|floatformat:0|default:"Contact for price" }}
+        </p>
+        <p style="margin: 0 0 4px; color: #64748b; font-size: 14px;">
+          <strong>Condition:</strong> {{ vehicle.condition }} | 
+          <strong>Mileage:</strong> {{ vehicle.mileage|floatformat:0 }} km
+        </p>
+        <p style="margin: 0; color: #64748b; font-size: 14px;">
+          <strong>VIN:</strong> {{ vehicle.vin }}
+        </p>
+      </td>
+    </tr>
+  </table>
+</div>
+{% endfor %}
+
+{% if more_count > 0 %}
+<p style="margin: 0 0 24px; color: #64748b; font-size: 14px; font-style: italic;">
+  + {{ more_count }} more vehicle{{ more_count|pluralize }} match{{ more_count|pluralize:"es" }} your search
+</p>
+{% endif %}
+
+<!-- CTA Button -->
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+  <tr>
+    <td align="center">
+      <a href="http://localhost:5173/buyer-portal" 
+         style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
+                color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; 
+                font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);">
+        View All Matches
+      </a>
+    </td>
+  </tr>
+</table>
+
+<!-- Manage Settings -->
+<p style="margin: 0; color: #94a3b8; font-size: 14px; text-align: center;">
+  <a href="http://localhost:5173/saved-searches" style="color: #3b82f6; text-decoration: underline;">
+    Manage your saved searches
+  </a> or 
+  <a href="http://localhost:5173/saved-searches" style="color: #3b82f6; text-decoration: underline;">
+    turn off notifications
+  </a>
+</p>
+{% endblock %}

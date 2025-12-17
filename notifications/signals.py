@@ -52,12 +52,12 @@ def create_deal_notification(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Commission)
 def create_commission_notification(sender, instance, created, **kwargs):
     """Create notification when a commission is earned"""
-    if created and instance.deal and instance.deal.broker:
+    if created and instance.recipient and instance.commission_type == 'broker':
         Notification.objects.create(
-            user=instance.deal.broker,
+            user=instance.recipient,
             type='commission',
             title="Commission Earned!",
-            message=f"You earned a commission of ${instance.amount:,.2f} on deal #{instance.deal.id}.",
+            message=f"You earned a commission of ${instance.amount_cad:,.2f} on deal #{instance.deal.id}.",
             link=f'/commissions',
             related_id=instance.id,
             related_model='commission'

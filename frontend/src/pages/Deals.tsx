@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import api from '../lib/api'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useAuth } from '../contexts/AuthContext'
 import { Deal } from '../types'
 import DealCard from '../components/DealCard'
 import DealFormModal from '../components/DealFormModal'
@@ -20,6 +21,7 @@ import DealDetailModal from '../components/DealDetailModal'
 
 export default function Deals() {
   const { language } = useLanguage()
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [paymentFilter, setPaymentFilter] = useState<string>('all')
@@ -27,12 +29,16 @@ export default function Deals() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedDealId, setSelectedDealId] = useState<number | null>(null)
 
-  const { data: deals = [], isLoading } = useQuery({
+  // Check if user is a buyer
+  const isBuyer = user?.role === 'buyer'
+
+const { data: deals = [], isLoading } = useQuery({
     queryKey: ['deals', statusFilter, paymentFilter],
     queryFn: async () => {
       const params: any = {}
       if (statusFilter !== 'all') params.status = statusFilter
       if (paymentFilter !== 'all') params.payment_status = paymentFilter
+      
       const response = await api.getDeals(params)
       return Array.isArray(response) ? response : response.results || []
     },
@@ -90,41 +96,60 @@ export default function Deals() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
-                {language === 'fr' ? 'Transactions' : 'Deals'}
+                {isBuyer 
+                  ? (language === 'fr' ? 'Mes Achats' : 'My Purchases')
+                  : (language === 'fr' ? 'Transactions' : 'Deals')
+                }
               </h1>
               <p className="text-slate-600 mt-1">
-                {language === 'fr'
-                  ? 'Gérez vos ventes et suivez les paiements'
-                  : 'Manage your sales and track payments'}
+                {isBuyer
+                  ? (language === 'fr'
+                    ? 'Suivez vos achats de véhicules et leurs statuts'
+                    : 'Track your vehicle purchases and their status')
+                  : (language === 'fr'
+                    ? 'Gérez vos ventes et suivez les paiements'
+                    : 'Manage your sales and track payments')
+                }
               </p>
             </div>
-            <button
-              onClick={() => setIsFormOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg hover:shadow-xl"
-              aria-label={language === 'fr' ? 'Créer une nouvelle transaction' : 'Create new deal'}
-            >
-              <Plus className="w-5 h-5" aria-hidden="true" />
-              {language === 'fr' ? 'Nouvelle transaction' : 'New Deal'}
-            </button>
+            {!isBuyer && (
+              <button
+                onClick={() => setIsFormOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg hover:shadow-xl"
+                aria-label={language === 'fr' ? 'Créer une nouvelle transaction' : 'Create new deal'}
+              >
+                <Plus className="w-5 h-5" aria-hidden="true" />
+                {language === 'fr' ? 'Nouvelle transaction' : 'New Deal'}
+              </button>
+            )}
           </div>
 
           {/* Stats Cards */}
           <div 
             className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"
             role="region"
-            aria-label={language === 'fr' ? 'Statistiques des transactions' : 'Deal statistics'}
+            aria-label={isBuyer 
+              ? (language === 'fr' ? 'Statistiques des achats' : 'Purchase statistics')
+              : (language === 'fr' ? 'Statistiques des transactions' : 'Deal statistics')
+            }
           >
             <div 
               className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-lg transition-shadow"
               role="article"
-              aria-label={`${language === 'fr' ? 'Total des transactions:' : 'Total deals:'} ${stats.total}`}
+              aria-label={`${isBuyer
+                ? (language === 'fr' ? 'Total des achats:' : 'Total purchases:')
+                : (language === 'fr' ? 'Total des transactions:' : 'Total deals:')
+              } ${stats.total}`}
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-blue-100 rounded-lg" aria-hidden="true">
                   <Package className="w-5 h-5 text-blue-600" />
                 </div>
                 <span className="text-sm text-slate-600">
-                  {language === 'fr' ? 'Total' : 'Total Deals'}
+                  {isBuyer
+                    ? (language === 'fr' ? 'Total' : 'Total Purchases')
+                    : (language === 'fr' ? 'Total' : 'Total Deals')
+                  }
                 </span>
               </div>
               <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
@@ -133,14 +158,20 @@ export default function Deals() {
             <div 
               className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-lg transition-shadow"
               role="article"
-              aria-label={`${language === 'fr' ? 'Transactions en cours:' : 'Active deals:'} ${stats.active}`}
+              aria-label={`${isBuyer
+                ? (language === 'fr' ? 'Achats en cours:' : 'Pending purchases:')
+                : (language === 'fr' ? 'Transactions en cours:' : 'Active deals:')
+              } ${stats.active}`}
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-amber-100 rounded-lg" aria-hidden="true">
                   <TrendingUp className="w-5 h-5 text-amber-600" />
                 </div>
                 <span className="text-sm text-slate-600">
-                  {language === 'fr' ? 'En cours' : 'Active'}
+                  {isBuyer
+                    ? (language === 'fr' ? 'En cours' : 'Pending')
+                    : (language === 'fr' ? 'En cours' : 'Active')
+                  }
                 </span>
               </div>
               <p className="text-3xl font-bold text-slate-900">{stats.active}</p>
@@ -149,7 +180,10 @@ export default function Deals() {
             <div 
               className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-lg transition-shadow"
               role="article"
-              aria-label={`${language === 'fr' ? 'Transactions terminées:' : 'Completed deals:'} ${stats.completed}`}
+              aria-label={`${isBuyer
+                ? (language === 'fr' ? 'Achats terminés:' : 'Completed purchases:')
+                : (language === 'fr' ? 'Transactions terminées:' : 'Completed deals:')
+              } ${stats.completed}`}
             >
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-green-100 rounded-lg" aria-hidden="true">
@@ -306,21 +340,31 @@ export default function Deals() {
           >
             <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" aria-hidden="true" />
             <h3 className="text-lg font-semibold text-slate-900 mb-2">
-              {language === 'fr' ? 'Aucune transaction trouvée' : 'No deals found'}
+              {isBuyer
+                ? (language === 'fr' ? 'Aucun achat trouvé' : 'No purchases found')
+                : (language === 'fr' ? 'Aucune transaction trouvée' : 'No deals found')
+              }
             </h3>
             <p className="text-slate-500 mb-6">
-              {language === 'fr'
-                ? 'Commencez à créer des transactions pour gérer vos ventes'
-                : 'Start creating deals to manage your sales'}
+              {isBuyer
+                ? (language === 'fr'
+                  ? 'Vos achats de véhicules apparaîtront ici'
+                  : 'Your vehicle purchases will appear here')
+                : (language === 'fr'
+                  ? 'Commencez à créer des transactions pour gérer vos ventes'
+                  : 'Start creating deals to manage your sales')
+              }
             </p>
-            <button
-              onClick={() => setIsFormOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all"
-              aria-label={language === 'fr' ? 'Créer ma première transaction' : 'Create my first deal'}
-            >
-              <Plus className="w-5 h-5" aria-hidden="true" />
-              {language === 'fr' ? 'Créer ma première transaction' : 'Create my first deal'}
-            </button>
+            {!isBuyer && (
+              <button
+                onClick={() => setIsFormOpen(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all"
+                aria-label={language === 'fr' ? 'Créer ma première transaction' : 'Create my first deal'}
+              >
+                <Plus className="w-5 h-5" aria-hidden="true" />
+                {language === 'fr' ? 'Créer ma première transaction' : 'Create my first deal'}
+              </button>
+            )}
           </div>
         ) : (
           <div

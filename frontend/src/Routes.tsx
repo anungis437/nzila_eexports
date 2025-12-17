@@ -14,10 +14,16 @@ const Commissions = lazy(() => import('./pages/Commissions.tsx'))
 const Shipments = lazy(() => import('./pages/Shipments.tsx'))
 const Documents = lazy(() => import('./pages/Documents.tsx'))
 const BuyerPortal = lazy(() => import('./pages/BuyerPortal.tsx'))
+const Favorites = lazy(() => import('./pages/Favorites.tsx'))
+const Compare = lazy(() => import('./pages/Compare.tsx'))
+const SavedSearches = lazy(() => import('./pages/SavedSearches.tsx'))
 const Settings = lazy(() => import('./pages/Settings.tsx'))
 const Payments = lazy(() => import('./pages/Payments.tsx'))
 const AuditTrail = lazy(() => import('./pages/AuditTrail.tsx'))
 const AdminTest = lazy(() => import('./pages/AdminTest.tsx'))
+const Analytics = lazy(() => import('./pages/Analytics.tsx'))
+const MessagesPage = lazy(() => import('./pages/MessagesPage.tsx'))
+const VehicleHistory = lazy(() => import('./pages/VehicleHistory.tsx'))
 
 // Loading component for lazy routes
 function LoadingFallback() {
@@ -61,6 +67,10 @@ export default function Routes() {
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="vehicles" element={<Vehicles />} />
+            <Route path="favorites" element={<Favorites />} />
+            <Route path="compare" element={<Compare />} />
+            <Route path="saved-searches" element={<SavedSearches />} />
+            <Route path="messages" element={<MessagesPage />} />
             <Route path="leads" element={<Leads />} />
             <Route path="deals" element={<Deals />} />
             <Route path="commissions" element={<Commissions />} />
@@ -68,6 +78,8 @@ export default function Routes() {
             <Route path="documents" element={<Documents />} />
             <Route path="payments" element={<Payments />} />
             <Route path="audit-trail" element={<AuditTrail />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="vehicle-history/:vehicleId" element={<VehicleHistory />} />
             <Route path="settings" element={<Settings />} />
             <Route path="admin-test" element={<AdminTest />} />
           </Route>

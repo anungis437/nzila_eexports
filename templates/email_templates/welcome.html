@@ -1,0 +1,37 @@
+{% extends "email_templates/base.html" %}
+
+{% block content %}
+    <h1 class="greeting">Welcome to Nzila Exports, {{ user_name }}! 🎉</h1>
+    
+    <p class="message">
+        Thank you for creating an account with us. We're thrilled to have you as part of the Nzila Exports family!
+    </p>
+    
+    <p class="message">
+        Nzila Exports is your premier destination for quality vehicle exports. Whether you're a buyer looking for the perfect vehicle or a dealer ready to showcase your inventory, we're here to make the process seamless and efficient.
+    </p>
+    
+    <div class="info-box">
+        <h3>What You Can Do:</h3>
+        <p>✓ Browse our extensive inventory of vehicles</p>
+        <p>✓ Save your favorite vehicles to a watchlist</p>
+        <p>✓ Compare multiple vehicles side-by-side</p>
+        <p>✓ Request information and connect with dealers</p>
+        <p>✓ Track your deals and shipments in real-time</p>
+    </div>
+    
+    <div style="text-align: center;">
+        <a href="{{ login_url }}" class="cta-button">Get Started Now</a>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <p class="message" style="font-size: 14px;">
+        If you have any questions or need assistance getting started, our support team is always here to help. 
+        Just reply to this email or contact us at <a href="mailto:{{ support_email }}" style="color: #2563eb;">{{ support_email }}</a>.
+    </p>
+    
+    <p class="message" style="font-size: 14px; color: #64748b;">
+        If you didn't create this account, please ignore this email or contact our support team.
+    </p>
+{% endblock %}

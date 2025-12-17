@@ -1,8 +1,42 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { Search, Filter, Car, MapPin, Gauge, X, Send, CheckCircle2 } from 'lucide-react'
+import { Search, Filter, Car, MapPin, Gauge, X, Send, CheckCircle2, MessageSquare } from 'lucide-react'
 import api from '../lib/api'
 import { useLanguage } from '../contexts/LanguageContext'
+import ImageGallery from '../components/ImageGallery'
+import ComparisonCheckbox from '../components/ComparisonCheckbox'
+import FavoriteButton from '../components/FavoriteButton'
+import WhatsAppButton from '../components/WhatsAppButton'
+import SaveSearchButton from '../components/SaveSearchButton'
+import { PriceHistoryBadge } from '../components/PriceHistory'
+import { SimilarVehicles, trackVehicleView } from '../components/SimilarVehicles'
+import { SearchHistory, saveSearchToHistory } from '../components/SearchHistory'
+import { VehicleHistory } from '../components/VehicleHistory'
+import { FinancingCalculator } from '../components/FinancingCalculator'
+import CurrencyConverter from '../components/CurrencyConverter'
+import ShippingCalculator from '../components/ShippingCalculator'
+import FinancingPreQualification from '../components/FinancingPreQualification'
+import { useAuth } from '../contexts/AuthContext'
+import { useStartConversation } from '../api/chat'
+import { useNavigate } from 'react-router-dom'
+
+interface VehicleImage {
+  id: number
+  image: string
+  caption?: string
+  is_primary?: boolean
+  order: number
+}
+
+interface PriceHistoryItem {
+  id: number
+  old_price: string
+  new_price: string
+  price_difference: string
+  percentage_change: string
+  changed_at: string
+  is_price_drop: boolean
+}
 
 interface Vehicle {
   id: number
@@ -19,17 +53,26 @@ interface Vehicle {
   description: string
   location: string
   main_image: string | null
+  images?: VehicleImage[]
   dealer_name: string
+  price_history?: PriceHistoryItem[]
 }
 
 export default function BuyerPortal() {
   const { language } = useLanguage()
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const startConversation = useStartConversation()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMake, setSelectedMake] = useState('')
   const [selectedYear, setSelectedYear] = useState('')
   const [selectedCondition, setSelectedCondition] = useState('')
+  const [selectedFuelType, setSelectedFuelType] = useState('')
+  const [selectedDrivetrain, setSelectedDrivetrain] = useState('')
+  const [selectedEngineType, setSelectedEngineType] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'financing' | 'tools'>('overview')
   const [showLeadForm, setShowLeadForm] = useState(false)
   const [leadSubmitted, setLeadSubmitted] = useState(false)
   const [leadData, setLeadData] = useState({
@@ -39,15 +82,95 @@ export default function BuyerPortal() {
     message: '',
   })
 
+  // Handle contact dealer (start conversation)
+  const handleContactDealer = async () => {
+    if (!selectedVehicle || !selectedVehicle.dealer) return
+    
+    try {
+      const conversation = await startConversation.mutateAsync({
+        participant_id: selectedVehicle.dealer,
+        vehicle_id: selectedVehicle.id,
+        subject: `Inquiry about ${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`,
+        initial_message: `Hi, I'm interested in your ${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model} (VIN: ${selectedVehicle.vin}). Can you provide more information?`,
+      })
+      
+      // Navigate to messages page with the new conversation
+      navigate('/messages')
+    } catch (error) {
+      console.error('Failed to start conversation:', error)
+    }
+  }
+
+  // Load saved filters from localStorage
+  React.useEffect(() => {
+    const saved = localStorage.getItem('buyerPortalFilters')
+    if (saved) {
+      try {
+        const filters = JSON.parse(saved)
+        if (filters.make) setSelectedMake(filters.make)
+        if (filters.year) setSelectedYear(filters.year)
+        if (filters.condition) setSelectedCondition(filters.condition)
+        if (filters.fuelType) setSelectedFuelType(filters.fuelType)
+        if (filters.drivetrain) setSelectedDrivetrain(filters.drivetrain)
+        if (filters.engineType) setSelectedEngineType(filters.engineType)
+      } catch (e) {
+        console.error('Failed to load saved filters', e)
+      }
+    }
+  }, [])
+
+  // Save filters to localStorage
+  React.useEffect(() => {
+    const filters = {
+      make: selectedMake,
+      year: selectedYear,
+      condition: selectedCondition,
+      fuelType: selectedFuelType,
+      drivetrain: selectedDrivetrain,
+      engineType: selectedEngineType,
+    }
+    localStorage.setItem('buyerPortalFilters', JSON.stringify(filters))
+  }, [selectedMake, selectedYear, selectedCondition, selectedFuelType, selectedDrivetrain, selectedEngineType])
+
+  // Track view when vehicle detail modal opens
+  useEffect(() => {
+    if (selectedVehicle) {
+      trackVehicleView(selectedVehicle.id)
+    }
+  }, [selectedVehicle])
+
+  // Save search to history when filters change or search is performed
+  useEffect(() => {
+    // Only save if there's actual search criteria
+    if (searchTerm || selectedMake || selectedYear || selectedCondition || selectedFuelType || selectedDrivetrain || selectedEngineType) {
+      // Debounce the save to avoid too many saves during typing
+      const timeoutId = setTimeout(() => {
+        saveSearchToHistory(searchTerm, {
+          make: selectedMake,
+          year: selectedYear,
+          condition: selectedCondition,
+          fuelType: selectedFuelType,
+          drivetrain: selectedDrivetrain,
+          engineType: selectedEngineType,
+        });
+      }, 1000); // Wait 1 second after user stops typing/changing filters
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchTerm, selectedMake, selectedYear, selectedCondition, selectedFuelType, selectedDrivetrain, selectedEngineType])
+
   // Fetch available vehicles
   const { data: vehicles, isLoading } = useQuery({
-    queryKey: ['publicVehicles', searchTerm, selectedMake, selectedYear, selectedCondition],
+    queryKey: ['publicVehicles', searchTerm, selectedMake, selectedYear, selectedCondition, selectedFuelType, selectedDrivetrain, selectedEngineType],
     queryFn: async () => {
       const params: any = { status: 'available' }
       if (searchTerm) params.search = searchTerm
       if (selectedMake) params.make = selectedMake
       if (selectedYear) params.year = selectedYear
       if (selectedCondition) params.condition = selectedCondition
+      if (selectedFuelType) params.fuel_type = selectedFuelType
+      if (selectedDrivetrain) params.drivetrain = selectedDrivetrain
+      if (selectedEngineType) params.engine_type = selectedEngineType
       
       const response = await api.getVehicles(params)
       return response.results as Vehicle[]
@@ -135,6 +258,22 @@ export default function BuyerPortal() {
                 className="w-full pl-12 pr-4 py-4 rounded-xl bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-lg"
               />
             </div>
+            
+            {/* Search History */}
+            <div className="mt-3 flex justify-end">
+              <SearchHistory
+                onApplySearch={(item) => {
+                  setSearchTerm(item.query);
+                  setSelectedMake(item.filters.make || '');
+                  setSelectedYear(item.filters.year || '');
+                  setSelectedCondition(item.filters.condition || '');
+                  setSelectedFuelType(item.filters.fuelType || '');
+                  setSelectedDrivetrain(item.filters.drivetrain || '');
+                  setSelectedEngineType(item.filters.engineType || '');
+                }}
+                language={language}
+              />
+            </div>
           </div>
 
           {/* Filter Toggle */}
@@ -163,6 +302,7 @@ export default function BuyerPortal() {
                 <select
                   value={selectedMake}
                   onChange={(e) => setSelectedMake(e.target.value)}
+                  aria-label={language === 'fr' ? 'Filtrer par marque' : 'Filter by make'}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">{language === 'fr' ? 'Toutes' : 'All'}</option>
@@ -182,6 +322,7 @@ export default function BuyerPortal() {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
+                  aria-label={language === 'fr' ? 'Filtrer par année' : 'Filter by year'}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">{language === 'fr' ? 'Toutes' : 'All'}</option>
@@ -201,6 +342,7 @@ export default function BuyerPortal() {
                 <select
                   value={selectedCondition}
                   onChange={(e) => setSelectedCondition(e.target.value)}
+                  aria-label={language === 'fr' ? 'Filtrer par état' : 'Filter by condition'}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">{language === 'fr' ? 'Tous' : 'All'}</option>
@@ -211,22 +353,96 @@ export default function BuyerPortal() {
                   ))}
                 </select>
               </div>
+
+              {/* Fuel Type Filter */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {language === 'fr' ? 'Type de carburant' : 'Fuel Type'}
+                </label>
+                <select
+                  value={selectedFuelType}
+                  onChange={(e) => setSelectedFuelType(e.target.value)}
+                  aria-label={language === 'fr' ? 'Filtrer par type de carburant' : 'Filter by fuel type'}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">{language === 'fr' ? 'Tous' : 'All'}</option>
+                  <option value="gasoline">{language === 'fr' ? 'Essence' : 'Gasoline'}</option>
+                  <option value="diesel">{language === 'fr' ? 'Diesel' : 'Diesel'}</option>
+                  <option value="electric">{language === 'fr' ? 'Électrique' : 'Electric'}</option>
+                  <option value="hybrid">{language === 'fr' ? 'Hybride' : 'Hybrid'}</option>
+                  <option value="plug-in-hybrid">{language === 'fr' ? 'Hybride rechargeable' : 'Plug-in Hybrid'}</option>
+                </select>
+              </div>
+
+              {/* Engine Type Filter */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {language === 'fr' ? 'Type de moteur' : 'Engine Type'}
+                </label>
+                <select
+                  value={selectedEngineType}
+                  onChange={(e) => setSelectedEngineType(e.target.value)}
+                  aria-label={language === 'fr' ? 'Filtrer par type de moteur' : 'Filter by engine type'}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">{language === 'fr' ? 'Tous' : 'All'}</option>
+                  <option value="4-cylinder">{language === 'fr' ? '4 cylindres' : '4 Cylinder'}</option>
+                  <option value="6-cylinder">{language === 'fr' ? '6 cylindres' : '6 Cylinder'}</option>
+                  <option value="8-cylinder">{language === 'fr' ? '8 cylindres' : '8 Cylinder'}</option>
+                  <option value="electric">{language === 'fr' ? 'Électrique' : 'Electric'}</option>
+                  <option value="hybrid">{language === 'fr' ? 'Hybride' : 'Hybrid'}</option>
+                  <option value="diesel">{language === 'fr' ? 'Diesel' : 'Diesel'}</option>
+                </select>
+              </div>
+
+              {/* Drivetrain Filter */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {language === 'fr' ? 'Traction' : 'Drivetrain'}
+                </label>
+                <select
+                  value={selectedDrivetrain}
+                  onChange={(e) => setSelectedDrivetrain(e.target.value)}
+                  aria-label={language === 'fr' ? 'Filtrer par traction' : 'Filter by drivetrain'}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">{language === 'fr' ? 'Tous' : 'All'}</option>
+                  <option value="fwd">{language === 'fr' ? 'Traction avant (FWD)' : 'Front-Wheel Drive (FWD)'}</option>
+                  <option value="rwd">{language === 'fr' ? 'Propulsion arrière (RWD)' : 'Rear-Wheel Drive (RWD)'}</option>
+                  <option value="awd">{language === 'fr' ? 'Intégrale (AWD)' : 'All-Wheel Drive (AWD)'}</option>
+                  <option value="4wd">{language === 'fr' ? '4 roues motrices (4WD)' : 'Four-Wheel Drive (4WD)'}</option>
+                </select>
+              </div>
             </div>
 
             {/* Clear Filters */}
-            {(selectedMake || selectedYear || selectedCondition || searchTerm) && (
-              <div className="mt-4 text-center">
+            {(selectedMake || selectedYear || selectedCondition || selectedFuelType || selectedDrivetrain || selectedEngineType || searchTerm) && (
+              <div className="mt-4 flex items-center justify-center gap-4">
                 <button
                   onClick={() => {
                     setSelectedMake('')
                     setSelectedYear('')
                     setSelectedCondition('')
+                    setSelectedFuelType('')
+                    setSelectedDrivetrain('')
+                    setSelectedEngineType('')
                     setSearchTerm('')
+                    localStorage.removeItem('buyerPortalFilters')
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
                   {language === 'fr' ? 'Effacer les filtres' : 'Clear filters'}
                 </button>
+                
+                {user && (
+                  <SaveSearchButton
+                    currentFilters={{
+                      make: selectedMake || undefined,
+                      yearMin: selectedYear ? parseInt(selectedYear) : undefined,
+                      condition: selectedCondition || undefined,
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -273,12 +489,28 @@ export default function BuyerPortal() {
                         <Car className="w-16 h-16 text-slate-400" />
                       </div>
                     )}
+                    {/* Price Drop Badge */}
+                    <PriceHistoryBadge 
+                      priceHistory={vehicle.price_history}
+                      currentPrice={vehicle.price_cad}
+                    />
                     {/* Condition Badge */}
-                    <div className="absolute top-3 right-3 px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full">
+                    <div className="absolute top-3 left-3 px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full">
                       {language === 'fr'
                         ? conditionLabels[vehicle.condition]?.fr
                         : conditionLabels[vehicle.condition]?.en}
                     </div>
+                    {/* Favorite and Comparison - Top Right */}
+                    {user && (
+                      <div className="absolute top-3 right-3 flex flex-col gap-2">
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <FavoriteButton vehicle={vehicle} />
+                        </div>
+                        <div className="bg-white rounded-lg px-2 py-1">
+                          <ComparisonCheckbox vehicle={vehicle} />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Content */}
@@ -340,34 +572,80 @@ export default function BuyerPortal() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-900">
-                {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
-              </h2>
-              <button
-                onClick={() => setSelectedVehicle(null)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
+            <div className="sticky top-0 bg-white border-b border-slate-200">
+              <div className="px-6 py-4 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                </h2>
+                <button
+                  onClick={() => {
+                    setSelectedVehicle(null);
+                    setActiveTab('overview');
+                  }}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  aria-label={language === 'fr' ? 'Fermer' : 'Close'}
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              {/* Tabs */}
+              <div className="flex gap-6 px-6">
+                <button
+                  onClick={() => setActiveTab('overview')}
+                  className={`pb-3 px-1 font-medium transition-colors border-b-2 ${
+                    activeTab === 'overview'
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {language === 'fr' ? 'Aperçu' : 'Overview'}
+                </button>
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`pb-3 px-1 font-medium transition-colors border-b-2 ${
+                    activeTab === 'history'
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {language === 'fr' ? 'Rapport d\'historique' : 'History Report'}
+                </button>
+                <button
+                  onClick={() => setActiveTab('financing')}
+                  className={`pb-3 px-1 font-medium transition-colors border-b-2 ${
+                    activeTab === 'financing'
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {language === 'fr' ? 'Financement' : 'Financing'}
+                </button>
+                <button
+                  onClick={() => setActiveTab('tools')}
+                  className={`pb-3 px-1 font-medium transition-colors border-b-2 ${
+                    activeTab === 'tools'
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {language === 'fr' ? 'Outils d\'achat' : 'Buyer Tools'}
+                </button>
+              </div>
             </div>
 
             {/* Content */}
             <div className="p-6">
-              {/* Image */}
-              <div className="relative h-64 md:h-96 bg-gradient-to-br from-slate-200 to-slate-300 rounded-xl overflow-hidden mb-6">
-                {selectedVehicle.main_image ? (
-                  <img
-                    src={selectedVehicle.main_image}
-                    alt={`${selectedVehicle.make} ${selectedVehicle.model}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Car className="w-24 h-24 text-slate-400" />
+              {activeTab === 'overview' ? (
+                <>
+                  {/* Image Gallery */}
+                  <div className="mb-6">
+                    <ImageGallery
+                      images={selectedVehicle.images || []}
+                      mainImage={selectedVehicle.main_image || undefined}
+                      altText={`${selectedVehicle.make} ${selectedVehicle.model}`}
+                    />
                   </div>
-                )}
-              </div>
 
               {/* Price */}
               <div className="mb-6 pb-6 border-b border-slate-200">
@@ -431,12 +709,34 @@ export default function BuyerPortal() {
 
               {/* Lead Form */}
               {!showLeadForm ? (
-                <button
-                  onClick={() => setShowLeadForm(true)}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
-                >
-                  {language === 'fr' ? "Demander plus d'informations" : 'Request More Information'}
-                </button>
+                <div className="space-y-3">
+                  {/* Contact Dealer via Chat */}
+                  {user && selectedVehicle.dealer && (
+                    <button
+                      onClick={handleContactDealer}
+                      disabled={startConversation.isPending}
+                      className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <MessageSquare className="w-5 h-5" />
+                      {language === 'fr' ? 'Contacter le concessionnaire' : 'Contact Dealer'}
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => setShowLeadForm(true)}
+                    className="w-full py-4 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold rounded-xl transition-all"
+                  >
+                    {language === 'fr' ? "Demander plus d'informations" : 'Request More Information'}
+                  </button>
+                  
+                  {/* WhatsApp Button */}
+                  <WhatsAppButton
+                    phoneNumber="+1234567890"
+                    message={`Hi! I'm interested in the ${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model} (VIN: ${selectedVehicle.vin}). Can you provide more details?`}
+                    size="lg"
+                    className="w-full justify-center"
+                  />
+                </div>
               ) : leadSubmitted ? (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
                   <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-3" />
@@ -541,6 +841,58 @@ export default function BuyerPortal() {
                     </button>
                   </div>
                 </form>
+              )}
+              
+              {/* Similar Vehicles Section */}
+              <div className="mt-8">
+                <SimilarVehicles
+                  referenceVehicleId={selectedVehicle.id}
+                  onVehicleClick={(vehicle) => {
+                    setSelectedVehicle(vehicle)
+                    setShowLeadForm(false)
+                    setLeadSubmitted(false)
+                    setActiveTab('overview')
+                    // Track view for new vehicle
+                    trackVehicleView(vehicle.id)
+                  }}
+                />
+              </div>
+                </>
+              ) : activeTab === 'history' ? (
+                /* History Tab */
+                <VehicleHistory vehicleId={selectedVehicle.id} language={language} />
+              ) : activeTab === 'financing' ? (
+                /* Financing Tab */
+                <FinancingCalculator vehiclePrice={selectedVehicle.price} language={language} />
+              ) : (
+                /* Buyer Tools Tab */
+                <div className="space-y-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-900">
+                      {language === 'fr' 
+                        ? 'Utilisez ces outils pour planifier votre achat et comprendre les coûts totaux.'
+                        : 'Use these tools to plan your purchase and understand the total costs.'}
+                    </p>
+                  </div>
+
+                  {/* Currency Converter */}
+                  <CurrencyConverter 
+                    baseAmount={parseFloat(selectedVehicle.price_cad)} 
+                    baseCurrency="CAD"
+                  />
+
+                  {/* Shipping Calculator */}
+                  <ShippingCalculator 
+                    vehicleYear={selectedVehicle.year}
+                    vehicleMake={selectedVehicle.make}
+                    vehicleModel={selectedVehicle.model}
+                  />
+
+                  {/* Financing Pre-Qualification */}
+                  <FinancingPreQualification 
+                    vehiclePrice={parseFloat(selectedVehicle.price_cad)}
+                  />
+                </div>
               )}
             </div>
           </div>

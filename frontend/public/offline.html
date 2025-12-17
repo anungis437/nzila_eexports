@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Nzila Export Hub</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icons/icon-192x192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: #f1f5f9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+        
+        h1 {
+            color: #1e293b;
+            font-size: 32px;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+        
+        p {
+            color: #64748b;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .retry-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .retry-button:active {
+            transform: translateY(0);
+        }
+        
+        .features {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .features h3 {
+            color: #1e293b;
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .feature-list {
+            list-style: none;
+            text-align: left;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            color: #64748b;
+        }
+        
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background: #e0e7ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 14px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .checking {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            📡
+        </div>
+        
+        <h1>You're Offline</h1>
+        
+        <p>It looks like you've lost your internet connection. Don't worry, some features are still available offline!</p>
+        
+        <button class="retry-button" onclick="checkConnection()">
+            <span id="button-text">Try Again</span>
+        </button>
+        
+        <div class="features">
+            <h3>Available Offline</h3>
+            <ul class="feature-list">
+                <li class="feature-item">
+                    <span class="feature-icon">🚗</span>
+                    <span>Browse cached vehicles</span>
+                </li>
+                <li class="feature-item">
+                    <span class="feature-icon">⭐</span>
+                    <span>View your favorites</span>
+                </li>
+                <li class="feature-item">
+                    <span class="feature-icon">🔖</span>
+                    <span>Access saved searches</span>
+                </li>
+                <li class="feature-item">
+                    <span class="feature-icon">📸</span>
+                    <span>View vehicle photos</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Check if we're online
+        window.addEventListener('load', () => {
+            if (navigator.onLine) {
+                window.location.href = '/';
+            }
+        });
+        
+        // Listen for online event
+        window.addEventListener('online', () => {
+            window.location.href = '/';
+        });
+        
+        function checkConnection() {
+            const button = document.querySelector('.retry-button');
+            const buttonText = document.getElementById('button-text');
+            
+            button.classList.add('checking');
+            buttonText.textContent = 'Checking...';
+            
+            // Try to fetch a small resource
+            fetch('/', { method: 'HEAD', cache: 'no-cache' })
+                .then(() => {
+                    buttonText.textContent = 'Connected!';
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
+                })
+                .catch(() => {
+                    buttonText.textContent = 'Still Offline';
+                    button.classList.remove('checking');
+                    setTimeout(() => {
+                        buttonText.textContent = 'Try Again';
+                    }, 2000);
+                });
+        }
+        
+        // Auto-check every 5 seconds
+        setInterval(() => {
+            if (navigator.onLine) {
+                fetch('/', { method: 'HEAD', cache: 'no-cache' })
+                    .then(() => {
+                        window.location.href = '/';
+                    })
+                    .catch(() => {
+                        // Still offline
+                    });
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

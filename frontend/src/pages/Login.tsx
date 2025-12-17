@@ -98,7 +98,7 @@ export default function Login() {
                 autoComplete="email"
                 required
                 aria-required="true"
-                aria-invalid={error ? 'true' : 'false'}
+                aria-invalid={!!error}
                 aria-describedby={error ? 'login-error' : undefined}
               />
             </div>
@@ -121,7 +121,7 @@ export default function Login() {
                 autoComplete="current-password"
                 required
                 aria-required="true"
-                aria-invalid={error ? 'true' : 'false'}
+                aria-invalid={!!error}
                 aria-describedby={error ? 'login-error' : undefined}
               />
             </div>

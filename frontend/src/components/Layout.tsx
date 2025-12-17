@@ -18,6 +18,7 @@ import {
   Search,
   CreditCard,
   Shield,
+  MessageSquare,
 } from 'lucide-react'
 import { Button } from './ui/button'
 import {
@@ -29,6 +30,7 @@ import {
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
 import KeyboardShortcutsModal from './KeyboardShortcutsModal'
+import { useUnreadCount } from '../api/chat'
 
 export default function Layout() {
   const { user, logout } = useAuth()
@@ -37,6 +39,7 @@ export default function Layout() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { data: unreadCount } = useUnreadCount()
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -87,6 +90,7 @@ export default function Layout() {
   const navItems = [
     { name: t('dashboard'), path: '/dashboard', icon: LayoutDashboard, permission: 'all' },
     { name: t('vehicles'), path: '/vehicles', icon: Car, permission: 'all' },
+    { name: language === 'fr' ? 'Messages' : 'Messages', path: '/messages', icon: MessageSquare, permission: 'all', badge: unreadCount?.unread_count },
     { name: t('leads'), path: '/leads', icon: Users, permission: ['broker', 'admin'] },
     { name: t('deals'), path: '/deals', icon: FileText, permission: 'all' },
     { name: t('commissions'), path: '/commissions', icon: DollarSign, permission: ['broker', 'dealer', 'admin'] },
@@ -121,7 +125,14 @@ export default function Layout() {
         aria-current={isActive ? 'page' : undefined}
       >
         <Icon className="w-5 h-5" aria-hidden="true" />
-        <span className="font-medium">{item.name}</span>
+        <span className="font-medium flex-1">{item.name}</span>
+        {item.badge && item.badge > 0 && (
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+            isActive ? 'bg-white text-primary-600' : 'bg-blue-600 text-white'
+          }`}>
+            {item.badge}
+          </span>
+        )}
       </Link>
     )
   }

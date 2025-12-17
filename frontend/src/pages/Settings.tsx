@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Settings as SettingsIcon, User, Building, DollarSign, Shield } from 'lucide-react'
-import api from '../lib/api'
+import { apiClient } from '../lib/api'
 import { useLanguage } from '../contexts/LanguageContext'
 import ProfileSettings from '../components/ProfileSettings'
 import CompanySettings from '../components/CompanySettings'
@@ -16,7 +16,7 @@ export default function Settings() {
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: api.getCurrentUser,
+    queryFn: apiClient.getCurrentUser,
   })
 
   const tabs = [
@@ -144,13 +144,19 @@ export default function Settings() {
                 <div className="h-4 bg-slate-200 rounded w-3/4"></div>
               </div>
             </div>
-          ) : (
+          ) : user ? (
             <>
               {activeTab === 'profile' && <ProfileSettings user={user} />}
               {activeTab === 'company' && <CompanySettings />}
               {activeTab === 'currency' && <CurrencySettings />}
               {activeTab === 'security' && <SecuritySettings />}
             </>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 text-center">
+              <p className="text-slate-600">
+                {language === 'fr' ? 'Impossible de charger les données utilisateur' : 'Unable to load user data'}
+              </p>
+            </div>
           )}
         </div>
       </div>
