@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal
 import uuid
 
@@ -448,7 +449,8 @@ class TransactionViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([])  # Webhooks don't use authentication - signature verification instead
+@csrf_exempt  # Stripe webhooks can't include CSRF tokens
 def stripe_webhook(request):
     """Handle Stripe webhook events"""
     payload = request.body

@@ -23,6 +23,7 @@ DATABASES = {
         'OPTIONS': {
             'connect_timeout': 10,
             'options': '-c statement_timeout=30000',  # 30 second query timeout
+            'sslmode': 'require',  # CRITICAL: Require encrypted connections
         },
         'CONN_MAX_AGE': 600,  # Connection pooling - keep connections for 10 minutes
         'CONN_HEALTH_CHECKS': True,  # Test connections before use

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Vehicle, VehicleImage, Offer
+from utils.sanitization import sanitize_html, sanitize_text
 
 
 class VehicleImageSerializer(serializers.ModelSerializer):
@@ -45,6 +46,18 @@ class VehicleSerializer(serializers.ModelSerializer):
                   'images', 'videos_count', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
     
+    def validate_description(self, value):
+        """Sanitize vehicle description to prevent XSS attacks"""
+        if value:
+            return sanitize_html(value)
+        return value
+    
+    def validate_location(self, value):
+        """Sanitize location text"""
+        if value:
+            return sanitize_text(value)
+        return value
+    
     def get_videos_count(self, obj):
         """Count how many videos are attached to this vehicle"""
         return obj.images.filter(media_type='video').count()
@@ -88,6 +101,24 @@ class OfferSerializer(serializers.ModelSerializer):
         """Ensure offer amount is reasonable"""
         if value <= 0:
             raise serializers.ValidationError("Offer amount must be greater than 0")
+        return value
+    
+    def validate_message(self, value):
+        """Sanitize offer message to prevent XSS"""
+        if value:
+            return sanitize_text(value)
+        return value
+    
+    def validate_counter_message(self, value):
+        """Sanitize counter offer message"""
+        if value:
+            return sanitize_text(value)
+        return value
+    
+    def validate_dealer_notes(self, value):
+        """Sanitize dealer notes"""
+        if value:
+            return sanitize_text(value)
         return value
 
 

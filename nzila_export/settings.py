@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,12 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-7yzf=0vdn&7zpt5oj*w=l**34#_le7(*4o=u-!$e8)+(3+q)(o'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default='False', cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
 # Frontend URL for email links
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
@@ -149,6 +150,15 @@ DATABASES = {
     }
 }
 
+# PostgreSQL SSL Configuration (Production)
+# Override DATABASES in production settings to include:
+# 'OPTIONS': {
+#     'sslmode': 'require',
+#     'sslrootcert': '/path/to/root.crt',
+#     'sslcert': '/path/to/client.crt',
+#     'sslkey': '/path/to/client.key',
+# }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -216,24 +226,26 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
-    # API Rate Limiting - CRITICAL SECURITY
+    # API Rate Limiting - Production Security Settings
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '1000/hour',  # Anonymous users: increased for dev
-        'user': '10000/hour',  # Authenticated users: increased for dev
-        'payment': '100/hour',  # Payment endpoints: increased for dev
-        'login': '1000/hour',  # Login attempts: increased for dev
-        'vehicle_history': '100/hour',  # CarFax/AutoCheck API calls
-        'transport_canada': '1000/hour',  # Transport Canada public data
+        'anon': '100/hour',  # Anonymous users: 0.03 req/sec (realistic browsing)
+        'user': '1000/hour',  # Authenticated users: 0.28 req/sec (normal API usage)
+        'payment': '10/hour',  # Payment endpoints: Max 10 payment attempts/hour
+        'login': '5/minute',  # Login attempts: 5/min to prevent credential stuffing
+        'registration': '3/hour',  # User registration: Prevent bot signups
+        'password_reset': '3/hour',  # Password reset: Prevent email bombing
+        'vehicle_history': '50/hour',  # CarFax/AutoCheck API calls (reduced costs)
+        'transport_canada': '500/hour',  # Transport Canada public data
         'provincial_registry': '50/hour',  # Provincial registry APIs
     },
 }
 
 # Stripe Payment Configuration
-from decouple import config, Csv
+# Stripe Payment Configuration
 STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY', default='')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
