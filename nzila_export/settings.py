@@ -160,6 +160,39 @@ DATABASES = {
 # }
 
 
+# Cache Configuration
+# Using Redis for production-grade caching (shared across workers, persistent)
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': config('REDIS_URL', default='redis://127.0.0.1:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'retry_on_timeout': True,
+            },
+            'SOCKET_CONNECT_TIMEOUT': 5,  # seconds
+            'SOCKET_TIMEOUT': 5,  # seconds
+            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+            'IGNORE_EXCEPTIONS': True,  # Don't crash if Redis is down
+        },
+        'KEY_PREFIX': 'nzila',
+        'TIMEOUT': 3600,  # Default: 1 hour
+    }
+}
+
+# Cache key timeouts for different data types
+CACHE_TTL = {
+    'vehicle_list': 60 * 15,  # 15 minutes
+    'vehicle_detail': 60 * 60,  # 1 hour
+    'carfax_report': 60 * 60 * 24,  # 24 hours (expensive API)
+    'exchange_rates': 60 * 60 * 12,  # 12 hours
+    'dealer_performance': 60 * 30,  # 30 minutes
+    'analytics_dashboard': 60 * 15,  # 15 minutes
+}
+
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 

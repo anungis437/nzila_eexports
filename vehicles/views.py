@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
+from django.core.cache import cache
+from django.conf import settings
 from .models import Vehicle, VehicleImage, Offer
 from .serializers import (
     VehicleSerializer, VehicleListSerializer, VehicleImageSerializer,
@@ -41,6 +43,42 @@ class VehicleViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    def list(self, request, *args, **kwargs):
+        """Override list to add caching for vehicle lists"""
+        # Generate cache key based on user role and filters
+        cache_key = f"vehicle_list_{request.user.role}_{request.user.id}_{request.GET.urlencode()}"
+        cached_data = cache.get(cache_key)
+        
+        if cached_data is not None:
+            return Response(cached_data)
+        
+        # Get fresh data
+        response = super().list(request, *args, **kwargs)
+        
+        # Cache the response data
+        cache_ttl = getattr(settings, 'CACHE_TTL', {}).get('vehicle_list', 900)
+        cache.set(cache_key, response.data, cache_ttl)
+        
+        return response
+    
+    def retrieve(self, request, *args, **kwargs):
+        """Override retrieve to add caching for vehicle details"""
+        vehicle_id = kwargs.get('pk')
+        cache_key = f"vehicle_detail_{vehicle_id}"
+        cached_data = cache.get(cache_key)
+        
+        if cached_data is not None:
+            return Response(cached_data)
+        
+        # Get fresh data
+        response = super().retrieve(request, *args, **kwargs)
+        
+        # Cache the response data
+        cache_ttl = getattr(settings, 'CACHE_TTL', {}).get('vehicle_detail', 3600)
+        cache.set(cache_key, response.data, cache_ttl)
+        
+        return response
+    
     def perform_create(self, serializer):
         # Set dealer to current user if they're a dealer
         if self.request.user.is_dealer():
@@ -49,6 +87,26 @@ class VehicleViewSet(viewsets.ModelViewSet):
             serializer.save()
         else:
             serializer.save(dealer=self.request.user)
+        
+        # Invalidate vehicle list cache for all users
+        cache.delete_pattern("vehicle_list_*")
+    
+    def perform_update(self, serializer):
+        """Override update to invalidate cache"""
+        instance = serializer.save()
+        
+        # Invalidate both list and detail caches
+        cache.delete_pattern("vehicle_list_*")
+        cache.delete(f"vehicle_detail_{instance.id}")
+    
+    def perform_destroy(self, instance):
+        """Override destroy to invalidate cache"""
+        vehicle_id = instance.id
+        instance.delete()
+        
+        # Invalidate both list and detail caches
+        cache.delete_pattern("vehicle_list_*")
+        cache.delete(f"vehicle_detail_{vehicle_id}")
     
     @action(detail=True, methods=['post'])
     def upload_image(self, request, pk=None):
