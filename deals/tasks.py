@@ -8,11 +8,19 @@ from django.utils import timezone
 from datetime import timedelta
 
 
-@shared_task
-def check_stalled_deals():
+@shared_task(
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 2, 'countdown': 600},
+    retry_backoff=True
+)
+def check_stalled_deals(self):
     """
     Asynchronous task to check for stalled leads and deals
     Replaces the management command for production use
+    
+    Retries: 2 attempts with exponential backoff (10min, 20min)
     """
     from deals.models import Lead, Deal
     
@@ -46,9 +54,19 @@ def check_stalled_deals():
     }
 
 
-@shared_task
-def send_lead_follow_up(lead_id):
-    """Send follow-up email for stalled lead"""
+@shared_task(
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 2, 'countdown': 300},
+    retry_backoff=True
+)
+def send_lead_follow_up(self, lead_id):
+    """
+    Send follow-up email for stalled lead
+    
+    Retries: 2 attempts with exponential backoff (5min, 10min)
+    """
     from deals.models import Lead
     
     try:
@@ -86,9 +104,19 @@ def send_lead_follow_up(lead_id):
         return f'Lead #{lead_id} not found'
 
 
-@shared_task
-def send_deal_follow_up(deal_id):
-    """Send follow-up email for stalled deal"""
+@shared_task(
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 2, 'countdown': 300},
+    retry_backoff=True
+)
+def send_deal_follow_up(self, deal_id):
+    """
+    Send follow-up email for stalled deal
+    
+    Retries: 2 attempts with exponential backoff (5min, 10min)
+    """
     from deals.models import Deal
     
     try:

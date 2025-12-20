@@ -39,6 +39,14 @@ app.conf.beat_schedule = {
         'task': 'nzila_export.tasks.cleanup_old_audit_logs',
         'schedule': crontab(hour=2, minute=0, day_of_month=1),  # Monthly cleanup
     },
+    'send-payment-reminders-daily': {
+        'task': 'payments.tasks.send_payment_reminders',
+        'schedule': crontab(hour=10, minute=0),  # Run daily at 10 AM
+    },
+    'check-delayed-shipments': {
+        'task': 'shipments.tasks.check_delayed_shipments',
+        'schedule': crontab(hour=8, minute=0),  # Run daily at 8 AM
+    },
 }
 
 # Celery configuration

@@ -62,6 +62,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'django_filters',
+    # Development tools (only enabled if DEBUG=True)
+    'debug_toolbar',
     # Project apps
     'nzila_export',
     'accounts',
@@ -88,6 +90,8 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # Django Debug Toolbar middleware (only active if DEBUG=True and INTERNAL_IPS match)
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -333,6 +337,12 @@ LLOYD_REGISTER_API_URL = config('LLOYD_REGISTER_API_URL',
 # ISO 28000 Security Management Configuration
 ISO_28000_ENABLED = config('ISO_28000_ENABLED', default=True, cast=bool)
 CTPAT_COMPLIANCE_ENABLED = config('CTPAT_COMPLIANCE_ENABLED', default=True, cast=bool)
+
+# Django Debug Toolbar Configuration (development only)
+INTERNAL_IPS = [
+    '127.0.0.1',
+    'localhost',
+]
 
 # Sentry Configuration - Error Tracking & Performance Monitoring
 import sentry_sdk

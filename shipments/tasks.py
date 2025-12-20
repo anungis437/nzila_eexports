@@ -6,10 +6,18 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 
-@shared_task
-def send_shipment_updates():
+@shared_task(
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 2, 'countdown': 600},
+    retry_backoff=True
+)
+def send_shipment_updates(self):
     """
     Check for shipment updates and notify buyers
+    
+    Retries: 2 attempts with exponential backoff (10min, 20min)
     """
     from shipments.models import Shipment
     from django.utils import timezone
@@ -38,9 +46,19 @@ def send_shipment_updates():
     }
 
 
-@shared_task
-def send_shipment_notification(shipment_id):
-    """Send shipment update notification to buyer"""
+@shared_task(
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 2, 'countdown': 300},
+    retry_backoff=True
+)
+def send_shipment_notification(self, shipment_id):
+    """
+    Send shipment update notification to buyer
+    
+    Retries: 2 attempts with exponential backoff (5min, 10min)
+    """
     from shipments.models import Shipment
     
     try:
@@ -78,10 +96,18 @@ def send_shipment_notification(shipment_id):
         return f'Shipment #{shipment_id} not found'
 
 
-@shared_task
-def check_delayed_shipments():
+@shared_task(
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 2, 'countdown': 600},
+    retry_backoff=True
+)
+def check_delayed_shipments(self):
     """
     Check for delayed shipments and alert stakeholders
+    
+    Retries: 2 attempts with exponential backoff (10min, 20min)
     """
     from shipments.models import Shipment
     from django.utils import timezone
@@ -104,9 +130,19 @@ def check_delayed_shipments():
     }
 
 
-@shared_task
-def send_delay_notification(shipment_id):
-    """Send notification about delayed shipment"""
+@shared_task(
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 2, 'countdown': 300},
+    retry_backoff=True
+)
+def send_delay_notification(self, shipment_id):
+    """
+    Send notification about delayed shipment
+    
+    Retries: 2 attempts with exponential backoff (5min, 10min)
+    """
     from shipments.models import Shipment
     
     try:

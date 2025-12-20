@@ -5,11 +5,22 @@ from celery import shared_task
 from .stripe_service import StripePaymentService
 
 
-@shared_task(name='payments.tasks.update_exchange_rates')
-def update_exchange_rates():
+@shared_task(
+    name='payments.tasks.update_exchange_rates',
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3, 'countdown': 300},
+    retry_backoff=True,
+    retry_backoff_max=1800,
+    retry_jitter=True
+)
+def update_exchange_rates(self):
     """
     Update exchange rates from external API
     Runs daily at 12:30 AM (configured in celery.py)
+    
+    Retries: 3 attempts with exponential backoff (5min, 10min, 15min)
     """
     try:
         result = StripePaymentService.update_exchange_rates()
@@ -21,11 +32,20 @@ def update_exchange_rates():
         return {'status': 'error', 'message': str(e)}
 
 
-@shared_task(name='payments.tasks.process_pending_payments')
-def process_pending_payments():
+@shared_task(
+    name='payments.tasks.process_pending_payments',
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 2, 'countdown': 600},
+    retry_backoff=True
+)
+def process_pending_payments(self):
     """
     Process pending payments and update their status
     Can be used to check Stripe payment status for stuck transactions
+    
+    Retries: 2 attempts with exponential backoff (10min, 20min)
     """
     from .models import Payment
     import stripe
@@ -60,10 +80,19 @@ def process_pending_payments():
     }
 
 
-@shared_task(name='payments.tasks.send_payment_reminders')
-def send_payment_reminders():
+@shared_task(
+    name='payments.tasks.send_payment_reminders',
+    bind=True,
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 2, 'countdown': 1800},
+    retry_backoff=True
+)
+def send_payment_reminders(self):
     """
     Send email reminders for unpaid invoices that are past due
+    
+    Retries: 2 attempts with exponential backoff (30min, 60min)
     """
     from .models import Invoice
     from django.utils import timezone

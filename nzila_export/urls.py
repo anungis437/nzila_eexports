@@ -48,6 +48,14 @@ urlpatterns = [
     path('', include('saved_searches.urls')),
     path('', include('price_alerts.urls')),
     path('', include('recommendations.urls')),
+]
+
+# Django Debug Toolbar URLs (only available in DEBUG mode)
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
     path('api/vehicle-history/', include('vehicle_history.urls')),
     
     # Chat/Messaging endpoints
