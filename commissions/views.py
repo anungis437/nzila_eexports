@@ -4,11 +4,13 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.db.models import Sum, Count, Q, F
-from .models import Commission, BrokerTier, DealerTier, BonusTransaction
+from .models import Commission, BrokerTier, DealerTier, BonusTransaction, InterestRate
 from .serializers import (
     CommissionSerializer, BrokerTierSerializer, DealerTierSerializer,
-    BonusTransactionSerializer, LeaderboardSerializer
+    BonusTransactionSerializer, LeaderboardSerializer, InterestRateSerializer,
+    InterestRateMatrixSerializer
 )
+from utils.permissions import IsAdmin
 
 
 class CommissionViewSet(viewsets.ModelViewSet):
@@ -309,4 +311,85 @@ class BonusTransactionViewSet(viewsets.ReadOnlyModelViewSet):
         if not user.is_admin():
             return BonusTransaction.objects.filter(user=user)
         return super().get_queryset()
+
+
+class InterestRateViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for interest rate management (Admin only).
+    Provides CRUD operations for managing interest rates by province and credit tier.
+    """
+    queryset = InterestRate.objects.all()
+    serializer_class = InterestRateSerializer
+    permission_classes = [IsAdmin]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['province', 'credit_tier', 'is_active']
+    
+    def get_serializer_context(self):
+        """Pass request to serializer for created_by field"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    def current(self, request):
+        """
+        Get current rates for all credit tiers, optionally filtered by province.
+        Public endpoint for Financing.tsx to fetch rates.
+        
+        Query params:
+        - province (optional): Filter by province code (e.g., 'ON', 'QC')
+        """
+        province = request.query_params.get('province')
+        
+        if province:
+            rates = InterestRate.get_rate_matrix(province=province)
+            return Response({
+                'province': province,
+                'rates': rates,
+                'effective_date': timezone.now().date()
+            })
+        else:
+            # Return rates for all provinces
+            all_rates = {}
+            for province_code, province_name in InterestRate.PROVINCE_CHOICES:
+                all_rates[province_code] = InterestRate.get_rate_matrix(province=province_code)
+            
+            return Response({
+                'all_provinces': all_rates,
+                'effective_date': timezone.now().date()
+            })
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    def by_tier(self, request):
+        """
+        Get current rate for a specific province and credit tier.
+        Public endpoint for Financing.tsx.
+        
+        Query params:
+        - province (required): Province code
+        - credit_tier (required): Credit tier code
+        """
+        province = request.query_params.get('province')
+        credit_tier = request.query_params.get('credit_tier')
+        
+        if not province or not credit_tier:
+            return Response(
+                {'error': 'Both province and credit_tier parameters are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        rate_obj = InterestRate.get_current_rate(province, credit_tier)
+        
+        if rate_obj:
+            return Response({
+                'province': province,
+                'credit_tier': credit_tier,
+                'rate_percentage': rate_obj.rate_percentage,
+                'effective_date': rate_obj.effective_date
+            })
+        else:
+            return Response(
+                {'error': 'No rate found for the specified province and credit tier'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 

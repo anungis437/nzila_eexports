@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class FinancingConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'financing'
+    verbose_name = 'Vehicle Financing'

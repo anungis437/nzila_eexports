@@ -81,9 +81,10 @@ export const ShipmentPhotos: React.FC<ShipmentPhotosProps> = ({ photos }) => {
                       href={photo.photo}
                       target="_blank"
                       rel="noopener noreferrer"
+                      aria-label="View full-size photo in new tab"
                       className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <ExternalLink className="w-4 h-4" aria-hidden="true" />
                     </a>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Commission, BrokerTier, DealerTier, BonusTransaction
+from .models import Commission, BrokerTier, DealerTier, BonusTransaction, InterestRate
 from accounts.serializers import UserSerializer
 
 
@@ -121,4 +121,39 @@ class LeaderboardSerializer(serializers.Serializer):
     tier = serializers.CharField()
     tier_display = serializers.CharField()
     commission_rate = serializers.DecimalField(max_digits=5, decimal_places=2)
+
+
+class InterestRateSerializer(serializers.ModelSerializer):
+    """Serializer for interest rate management"""
+    province_display = serializers.CharField(source='get_province_display', read_only=True)
+    credit_tier_display = serializers.CharField(source='get_credit_tier_display', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = InterestRate
+        fields = [
+            'id', 'province', 'province_display',
+            'credit_tier', 'credit_tier_display',
+            'rate_percentage', 'effective_date', 'is_active',
+            'notes', 'created_by', 'created_by_name',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        """Set created_by to current user"""
+        request = self.context.get('request')
+        if request and request.user:
+            validated_data['created_by'] = request.user
+        return super().create(validated_data)
+
+
+class InterestRateMatrixSerializer(serializers.Serializer):
+    """Serializer for returning rate matrix for a province"""
+    province = serializers.CharField()
+    rates = serializers.DictField(
+        child=serializers.DecimalField(max_digits=5, decimal_places=2)
+    )
+    effective_date = serializers.DateField()
+
 

@@ -4,11 +4,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
+from django.utils import timezone
 from .models import Review, ReviewHelpfulness, DealerRating
 from .serializers import (
     ReviewSerializer, ReviewCreateSerializer, ReviewResponseSerializer,
     DealerRatingSerializer
 )
+from utils.permissions import IsAdmin
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -120,6 +122,92 @@ class ReviewViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(reviews, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def approve(self, request, pk=None):
+        """Approve a review for publication (admin only)"""
+        review = self.get_object()
+        
+        if review.is_approved:
+            return Response(
+                {'error': 'Review is already approved'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        review.is_approved = True
+        review.save()
+        
+        serializer = self.get_serializer(review)
+        return Response({
+            'success': True,
+            'message': 'Review approved successfully',
+            'review': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def reject(self, request, pk=None):
+        """Reject a review (admin only) - sets is_approved to False"""
+        review = self.get_object()
+        reason = request.data.get('reason', 'Violates community guidelines')
+        
+        if not review.is_approved:
+            return Response(
+                {'error': 'Review is already rejected'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        review.is_approved = False
+        review.dealer_notes = f"REJECTED by admin: {reason}"
+        review.save()
+        
+        serializer = self.get_serializer(review)
+        return Response({
+            'success': True,
+            'message': 'Review rejected successfully',
+            'reason': reason,
+            'review': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def flag(self, request, pk=None):
+        """Flag a review for admin review (admin only)"""
+        review = self.get_object()
+        flag_reason = request.data.get('reason', 'Flagged for review')
+        
+        # Mark as unapproved pending review
+        review.is_approved = False
+        review.dealer_notes = f"FLAGGED for review: {flag_reason} (flagged at {timezone.now().isoformat()})"
+        review.save()
+        
+        serializer = self.get_serializer(review)
+        return Response({
+            'success': True,
+            'message': 'Review flagged for admin review',
+            'reason': flag_reason,
+            'review': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
+    def feature(self, request, pk=None):
+        """Feature a review (admin only) - showcases excellent reviews"""
+        review = self.get_object()
+        
+        if not review.is_approved:
+            return Response(
+                {'error': 'Can only feature approved reviews'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        review.is_featured = not review.is_featured  # Toggle featured status
+        review.save()
+        
+        serializer = self.get_serializer(review)
+        return Response({
+            'success': True,
+            'message': f"Review {'featured' if review.is_featured else 'unfeatured'} successfully",
+            'is_featured': review.is_featured,
+            'review': serializer.data
+        })
 
 
 class DealerRatingViewSet(viewsets.ReadOnlyModelViewSet):

@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
 from decimal import Decimal
 import uuid
 
@@ -18,6 +19,8 @@ from .serializers import (
 from .stripe_service import StripePaymentService, CurrencyService
 from .throttles import PaymentRateThrottle
 from deals.models import Deal
+from utils.pdf_generator import generate_invoice_pdf
+from utils.email_service import EmailService
 from shipments.models import Shipment
 
 
@@ -416,16 +419,47 @@ Nzila Ventures Team
     
     @action(detail=True, methods=['get'])
     def generate_pdf(self, request, pk=None):
-        """Generate PDF for invoice"""
+        """Generate and download invoice PDF"""
         invoice = self.get_object()
         
-        # TODO: Implement PDF generation using ReportLab
-        # For now, return a placeholder
+        try:
+            # Generate PDF
+            pdf_buffer = generate_invoice_pdf(invoice)
+            
+            # Create HTTP response with PDF
+            response = HttpResponse(pdf_buffer, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
+            
+            return response
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to generate PDF: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['post'])
+    def send_reminder(self, request, pk=None):
+        """Send payment reminder email"""
+        invoice = self.get_object()
         
-        return Response({
-            'message': 'PDF generation not yet implemented',
-            'invoice_id': invoice.id,
-        })
+        try:
+            # Get recipient email
+            recipient_email = invoice.deal.buyer.email if invoice.deal and invoice.deal.buyer else invoice.user.email
+            
+            # Send reminder email
+            EmailService.send_invoice_reminder(invoice, recipient_email)
+            
+            return Response({
+                'message': 'Payment reminder sent successfully',
+                'sent_to': recipient_email
+            })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to send reminder: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class TransactionViewSet(viewsets.ReadOnlyModelViewSet):

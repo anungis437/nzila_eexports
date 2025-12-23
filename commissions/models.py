@@ -671,3 +671,129 @@ def process_dealer_bonuses(dealer, dealer_tier):
         dealer_tier.certification_bonus_paid = True
         dealer_tier.save()
 
+
+class InterestRate(models.Model):
+    """
+    Interest rates for vehicle financing by province and credit tier.
+    Replaces hardcoded rates in Financing.tsx, enables dynamic rate management.
+    """
+    
+    PROVINCE_CHOICES = [
+        ('ON', 'Ontario'),
+        ('QC', 'Quebec'),
+        ('BC', 'British Columbia'),
+        ('AB', 'Alberta'),
+        ('SK', 'Saskatchewan'),
+        ('MB', 'Manitoba'),
+        ('NB', 'New Brunswick'),
+        ('NS', 'Nova Scotia'),
+        ('PE', 'Prince Edward Island'),
+        ('NL', 'Newfoundland and Labrador'),
+        ('YT', 'Yukon'),
+        ('NT', 'Northwest Territories'),
+        ('NU', 'Nunavut'),
+    ]
+    
+    CREDIT_TIER_CHOICES = [
+        ('excellent', 'Excellent (750+)'),
+        ('good', 'Good (680-749)'),
+        ('fair', 'Fair (620-679)'),
+        ('poor', 'Poor (550-619)'),
+        ('very_poor', 'Very Poor (<550)'),
+    ]
+    
+    province = models.CharField(
+        max_length=2,
+        choices=PROVINCE_CHOICES,
+        verbose_name=_('Province')
+    )
+    credit_tier = models.CharField(
+        max_length=20,
+        choices=CREDIT_TIER_CHOICES,
+        verbose_name=_('Credit Tier')
+    )
+    rate_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name=_('Interest Rate (%)'),
+        help_text=_('Annual interest rate percentage')
+    )
+    effective_date = models.DateField(
+        default=timezone.now,
+        verbose_name=_('Effective Date')
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_('Is Active')
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name=_('Notes'),
+        help_text=_('Internal notes about rate changes')
+    )
+    
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='interest_rates_created',
+        verbose_name=_('Created By')
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = _('Interest Rate')
+        verbose_name_plural = _('Interest Rates')
+        ordering = ['-effective_date', 'province', 'credit_tier']
+        unique_together = [['province', 'credit_tier', 'effective_date']]
+    
+    def __str__(self):
+        return f"{self.get_province_display()} - {self.get_credit_tier_display()}: {self.rate_percentage}%"
+    
+    @classmethod
+    def get_current_rate(cls, province, credit_tier):
+        """
+        Get the current active rate for a province and credit tier.
+        Returns the most recent effective rate.
+        """
+        today = timezone.now().date()
+        try:
+            return cls.objects.filter(
+                province=province,
+                credit_tier=credit_tier,
+                effective_date__lte=today,
+                is_active=True
+            ).order_by('-effective_date').first()
+        except cls.DoesNotExist:
+            return None
+    
+    @classmethod
+    def get_rate_matrix(cls, province=None):
+        """
+        Get current rates for all credit tiers, optionally filtered by province.
+        Returns a dictionary keyed by credit tier.
+        """
+        today = timezone.now().date()
+        filters = {
+            'effective_date__lte': today,
+            'is_active': True
+        }
+        
+        if province:
+            filters['province'] = province
+        
+        rates = {}
+        for credit_tier, _ in cls.CREDIT_TIER_CHOICES:
+            rate_obj = cls.objects.filter(
+                credit_tier=credit_tier,
+                **filters
+            ).order_by('-effective_date').first()
+            
+            if rate_obj:
+                rates[credit_tier] = rate_obj.rate_percentage
+        
+        return rates
+

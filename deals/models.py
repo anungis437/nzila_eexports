@@ -3,6 +3,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 from nzila_export.sanitizers import sanitize_html
 
 
@@ -233,6 +234,309 @@ class Deal(models.Model):
             return False
         threshold = timezone.now() - timedelta(days=14)
         return self.updated_at < threshold
+    
+    # ==================== FINANCIAL MANAGEMENT METHODS ====================
+    
+    def create_financial_terms(self, deposit_percentage=Decimal('20.00'), payment_term_days=30):
+        """
+        Initialize financial terms for this deal.
+        
+        Args:
+            deposit_percentage (Decimal): Deposit percentage (default 20%)
+            payment_term_days (int): Days to pay balance after deposit (default 30)
+        
+        Returns:
+            DealFinancialTerms: Created financial terms instance
+        """
+        from .financial_models import DealFinancialTerms
+        from payments.models import Currency
+        
+        # Get CAD currency
+        cad_currency = Currency.objects.get(code='CAD')
+        
+        # Convert to USD for reporting
+        total_price_usd = self.agreed_price_cad * cad_currency.exchange_rate_to_usd
+        
+        # Calculate deposit amount
+        deposit_amount = (self.agreed_price_cad * deposit_percentage / 100).quantize(Decimal('0.01'))
+        
+        financial_terms = DealFinancialTerms.objects.create(
+            deal=self,
+            total_price=self.agreed_price_cad,
+            currency=cad_currency,
+            total_price_usd=total_price_usd,
+            deposit_percentage=deposit_percentage,
+            deposit_amount=deposit_amount,
+            deposit_due_date=timezone.now() + timedelta(days=3),
+            balance_remaining=self.agreed_price_cad,
+            balance_due_date=timezone.now() + timedelta(days=payment_term_days + 3),
+            payment_term_days=payment_term_days
+        )
+        
+        return financial_terms
+    
+    def create_standard_payment_schedule(self):
+        """
+        Create standard 5-milestone payment schedule:
+        1. Initial Deposit (20%) - due in 3 days
+        2. Post-Inspection (15%) - due in 10 days
+        3. Documentation (25%) - due in 20 days
+        4. Pre-Shipment (25%) - due in 30 days
+        5. Final Delivery (15%) - due in 45 days
+        
+        Returns:
+            list: Created PaymentMilestone instances
+        """
+        from .financial_models import PaymentMilestone
+        
+        if not hasattr(self, 'financial_terms'):
+            raise ValueError("Financial terms must be created before payment schedule")
+        
+        terms = self.financial_terms
+        
+        milestones_config = [
+            {
+                'type': 'deposit',
+                'name': 'Initial Deposit',
+                'percentage': Decimal('20.00'),
+                'days_offset': 3,
+                'sequence': 1,
+                'description': 'Initial deposit to secure the vehicle'
+            },
+            {
+                'type': 'inspection',
+                'name': 'Post-Inspection Payment',
+                'percentage': Decimal('15.00'),
+                'days_offset': 10,
+                'sequence': 2,
+                'description': 'Payment after vehicle inspection is completed'
+            },
+            {
+                'type': 'documentation',
+                'name': 'Documentation Payment',
+                'percentage': Decimal('25.00'),
+                'days_offset': 20,
+                'sequence': 3,
+                'description': 'Payment after all documents are verified'
+            },
+            {
+                'type': 'pre_shipment',
+                'name': 'Pre-Shipment Payment',
+                'percentage': Decimal('25.00'),
+                'days_offset': 30,
+                'sequence': 4,
+                'description': 'Payment before vehicle is loaded for shipment'
+            },
+            {
+                'type': 'delivery',
+                'name': 'Final Delivery Payment',
+                'percentage': Decimal('15.00'),
+                'days_offset': 45,
+                'sequence': 5,
+                'description': 'Final payment upon delivery confirmation'
+            },
+        ]
+        
+        milestones = []
+        for config in milestones_config:
+            amount_due = (terms.total_price * config['percentage'] / 100).quantize(Decimal('0.01'))
+            
+            milestone = PaymentMilestone.objects.create(
+                deal_financial_terms=terms,
+                milestone_type=config['type'],
+                name=config['name'],
+                description=config['description'],
+                sequence=config['sequence'],
+                amount_due=amount_due,
+                currency=terms.currency,
+                due_date=timezone.now() + timedelta(days=config['days_offset'])
+            )
+            milestones.append(milestone)
+        
+        return milestones
+    
+    def setup_financing(self, financed_amount, down_payment, interest_rate, term_months, lender_name=''):
+        """
+        Set up financing for this deal.
+        
+        Args:
+            financed_amount (Decimal): Amount to be financed
+            down_payment (Decimal): Down payment amount
+            interest_rate (Decimal): Annual interest rate as percentage
+            term_months (int): Loan term in months
+            lender_name (str): Name of lending institution
+        
+        Returns:
+            FinancingOption: Created financing option instance
+        """
+        from .financial_models import FinancingOption
+        from datetime import date
+        
+        # Calculate first payment date (30 days from now)
+        first_payment_date = date.today() + timedelta(days=30)
+        # Calculate final payment date (term_months * 30 days from first payment)
+        final_payment_date = first_payment_date + timedelta(days=term_months * 30)
+        
+        # Create financing option
+        financing = FinancingOption.objects.create(
+            deal=self,
+            financing_type='partner_lender' if lender_name else 'in_house',
+            lender_name=lender_name,
+            financed_amount=financed_amount,
+            down_payment=down_payment,
+            interest_rate=interest_rate,
+            term_months=term_months,
+            first_payment_date=first_payment_date,
+            final_payment_date=final_payment_date
+        )
+        
+        # Calculations are done automatically in save() method
+        # Generate installment schedule
+        financing.generate_installment_schedule()
+        
+        # Update deal financial terms to reflect financing
+        if hasattr(self, 'financial_terms'):
+            self.financial_terms.is_financed = True
+            self.financial_terms.save()
+        
+        return financing
+    
+    def get_payment_status_summary(self):
+        """
+        Get comprehensive payment status summary.
+        
+        Returns:
+            dict: Payment status information including totals, milestones, financing
+        """
+        if not hasattr(self, 'financial_terms'):
+            return {
+                'status': 'not_configured',
+                'message': 'Financial terms not set up for this deal'
+            }
+        
+        terms = self.financial_terms
+        milestones = terms.milestones.all()
+        
+        summary = {
+            'total_price': terms.total_price,
+            'currency': terms.currency.code,
+            'total_paid': terms.total_paid,
+            'balance_remaining': terms.balance_remaining,
+            'payment_progress_percentage': terms.get_payment_progress_percentage(),
+            'deposit': {
+                'amount': terms.deposit_amount,
+                'percentage': terms.deposit_percentage,
+                'paid': terms.deposit_paid,
+                'paid_at': terms.deposit_paid_at.isoformat() if terms.deposit_paid_at else None,
+                'due_date': terms.deposit_due_date.isoformat(),
+                'overdue': terms.is_deposit_overdue()
+            },
+            'balance': {
+                'amount': terms.balance_remaining,
+                'due_date': terms.balance_due_date.isoformat() if terms.balance_due_date else None,
+                'overdue': terms.is_balance_overdue()
+            },
+            'milestones': {
+                'total': milestones.count(),
+                'paid': milestones.filter(status='paid').count(),
+                'pending': milestones.filter(status='pending').count(),
+                'overdue': milestones.filter(status='overdue').count(),
+                'list': [
+                    {
+                        'name': m.name,
+                        'type': m.milestone_type,
+                        'amount_due': m.amount_due,
+                        'amount_paid': m.amount_paid,
+                        'due_date': m.due_date.isoformat(),
+                        'status': m.status,
+                        'sequence': m.sequence
+                    }
+                    for m in milestones
+                ]
+            },
+            'is_financed': terms.is_financed,
+            'fully_paid': terms.is_fully_paid()
+        }
+        
+        # Add financing info if applicable
+        if hasattr(self, 'financing') and terms.is_financed:
+            financing = self.financing
+            summary['financing'] = {
+                'type': financing.financing_type,
+                'lender': financing.lender_name,
+                'financed_amount': financing.financed_amount,
+                'down_payment': financing.down_payment,
+                'interest_rate': financing.interest_rate,
+                'term_months': financing.term_months,
+                'monthly_payment': financing.monthly_payment,
+                'total_interest': financing.total_interest,
+                'total_amount': financing.total_amount,
+                'status': financing.status,
+                'first_payment_date': financing.first_payment_date.isoformat(),
+                'installments_paid': financing.installments.filter(status='paid').count(),
+                'installments_total': financing.installments.count()
+            }
+        
+        return summary
+    
+    def process_payment(self, payment_obj):
+        """
+        Process a payment and allocate to milestones.
+        
+        This method:
+        1. Updates financial terms with payment amount
+        2. Allocates payment to pending milestones in sequence
+        3. Updates deal payment status
+        
+        Args:
+            payment_obj: Payment model instance
+        """
+        if not hasattr(self, 'financial_terms'):
+            raise ValueError("Financial terms not set up for this deal")
+        
+        # Update financial terms
+        self.financial_terms.record_payment(payment_obj.amount)
+        
+        # Allocate to pending milestones
+        remaining_payment = Decimal(str(payment_obj.amount))
+        pending_milestones = self.financial_terms.milestones.filter(
+            status__in=['pending', 'partial', 'overdue']
+        ).order_by('sequence')
+        
+        for milestone in pending_milestones:
+            if remaining_payment <= 0:
+                break
+            
+            milestone_balance = milestone.get_amount_remaining()
+            allocation = min(remaining_payment, milestone_balance)
+            
+            # Create a "virtual" payment object for milestone recording
+            # The actual payment record is already in DB
+            milestone.record_payment(payment_obj)
+            remaining_payment -= allocation
+        
+        # Update deal payment status
+        if self.financial_terms.is_fully_paid():
+            self.payment_status = 'paid'
+        elif self.financial_terms.total_paid > 0:
+            self.payment_status = 'partial'
+        
+        self.save()
+    
+    def get_next_payment_due(self):
+        """
+        Get the next payment milestone that is due.
+        
+        Returns:
+            PaymentMilestone or None: Next pending milestone
+        """
+        if not hasattr(self, 'financial_terms'):
+            return None
+        
+        return self.financial_terms.milestones.filter(
+            status__in=['pending', 'partial', 'overdue']
+        ).order_by('due_date').first()
+
 
 
 class Document(models.Model):
@@ -315,3 +619,23 @@ class Document(models.Model):
     
     def __str__(self):
         return f"{self.get_document_type_display()} - Deal #{self.deal.id}"
+
+
+# Import financial models to make them part of deals app
+from .financial_models import (
+    DealFinancialTerms,
+    PaymentMilestone,
+    FinancingOption,
+    FinancingInstallment
+)
+
+__all__ = [
+    'Lead',
+    'Deal',
+    'Document',
+    'DealFinancialTerms',
+    'PaymentMilestone',
+    'FinancingOption',
+    'FinancingInstallment'
+]
+

@@ -22,8 +22,21 @@ const Payments = lazy(() => import('./pages/Payments.tsx'))
 const AuditTrail = lazy(() => import('./pages/AuditTrail.tsx'))
 const AdminTest = lazy(() => import('./pages/AdminTest.tsx'))
 const Analytics = lazy(() => import('./pages/Analytics.tsx'))
+const BrokerAnalytics = lazy(() => import('./pages/BrokerAnalytics.tsx'))
 const MessagesPage = lazy(() => import('./pages/MessagesPage.tsx'))
 const VehicleHistory = lazy(() => import('./pages/VehicleHistory.tsx'))
+const Financing = lazy(() => import('./pages/Financing.tsx'))
+const DealerVerification = lazy(() => import('./pages/DealerVerification.tsx'))
+const SecurityDashboard = lazy(() => import('./pages/SecurityDashboard.tsx'))
+const ComplianceDashboard = lazy(() => import('./pages/ComplianceDashboard.tsx'))
+const ShipmentSecurityDashboard = lazy(() => import('./pages/ShipmentSecurityDashboard.tsx'))
+const InterestRateManagement = lazy(() => import('./pages/InterestRateManagement.tsx'))
+const InvoiceManagement = lazy(() => import('./pages/InvoiceManagement.tsx'))
+const TransactionViewer = lazy(() => import('./pages/TransactionViewer.tsx'))
+const InspectionManagement = lazy(() => import('./pages/InspectionManagement.tsx'))
+const OfferManagement = lazy(() => import('./pages/OfferManagement.tsx'))
+const TierManagement = lazy(() => import('./pages/TierManagement.tsx'))
+const ReviewModeration = lazy(() => import('./pages/ReviewModeration.tsx'))
 
 // Loading component for lazy routes
 function LoadingFallback() {
@@ -79,7 +92,20 @@ export default function Routes() {
             <Route path="payments" element={<Payments />} />
             <Route path="audit-trail" element={<AuditTrail />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="broker-analytics" element={<BrokerAnalytics />} />
             <Route path="vehicle-history/:vehicleId" element={<VehicleHistory />} />
+            <Route path="financing" element={<Financing />} />
+            <Route path="dealer-verification" element={<DealerVerification />} />
+            <Route path="security" element={<SecurityDashboard />} />
+            <Route path="compliance" element={<ComplianceDashboard />} />
+            <Route path="shipment-security" element={<ShipmentSecurityDashboard />} />
+            <Route path="interest-rates" element={<InterestRateManagement />} />
+            <Route path="invoices" element={<InvoiceManagement />} />
+            <Route path="transactions" element={<TransactionViewer />} />
+            <Route path="inspections" element={<InspectionManagement />} />
+            <Route path="offers" element={<OfferManagement />} />
+            <Route path="tiers" element={<TierManagement />} />
+            <Route path="review-moderation" element={<ReviewModeration />} />
             <Route path="settings" element={<Settings />} />
             <Route path="admin-test" element={<AdminTest />} />
           </Route>

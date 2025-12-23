@@ -48,15 +48,19 @@ urlpatterns = [
     path('', include('saved_searches.urls')),
     path('', include('price_alerts.urls')),
     path('', include('recommendations.urls')),
-]
-
-# Django Debug Toolbar URLs (only available in DEBUG mode)
-if settings.DEBUG:
-    import debug_toolbar
-    urlpatterns = [
-        path('__debug__/', include(debug_toolbar.urls)),
-    ] + urlpatterns
     path('api/vehicle-history/', include('vehicle_history.urls')),
+    
+    # PHASE 2 - Feature 5: Export Documentation endpoints
+    path('api/', include('documents.urls')),
+    
+    # PHASE 2 - Feature 6: Third-Party Inspection Integration endpoints
+    path('api/inspections/', include('inspections.urls')),
+    
+    # Audit Trail and Compliance endpoints
+    path('api/audit/', include('audit.urls')),
+    
+    # PHASE 3 - Feature 7: Financing Calculator Enhancement endpoints
+    path('api/financing/', include('financing.urls')),
     
     # Chat/Messaging endpoints
     path('api/chat/', include('chat.urls')),
@@ -84,6 +88,13 @@ if settings.DEBUG:
     # Internationalization
     path('i18n/', include('django.conf.urls.i18n')),
 ]
+
+# Django Debug Toolbar URLs (only available in DEBUG mode)
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -5,18 +5,23 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.core.cache import cache
 from django.conf import settings
-from .models import Vehicle, VehicleImage, Offer
+from decimal import Decimal, InvalidOperation
+from .models import Vehicle, VehicleImage, Offer, VehicleInspectionSlot, InspectionAppointment
 from .serializers import (
     VehicleSerializer, VehicleListSerializer, VehicleImageSerializer,
-    OfferSerializer, OfferCreateSerializer
+    OfferSerializer, OfferCreateSerializer,
+    VehicleInspectionSlotSerializer, InspectionAppointmentSerializer,
+    InspectionAppointmentCreateSerializer
 )
+from .filters import VehicleProximityFilter
+from utils.distance_calculator import haversine_distance, get_distance_display
 
 
 class VehicleViewSet(viewsets.ModelViewSet):
     queryset = Vehicle.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'make', 'year', 'condition', 'dealer']
+    filterset_class = VehicleProximityFilter  # Use custom proximity filter
     search_fields = ['make', 'model', 'vin', 'location']
     ordering_fields = ['price_cad', 'year', 'mileage', 'created_at']
     ordering = ['-created_at']
@@ -44,7 +49,75 @@ class VehicleViewSet(viewsets.ModelViewSet):
         return queryset
     
     def list(self, request, *args, **kwargs):
-        """Override list to add caching for vehicle lists"""
+        """
+        Override list to add distance calculation and sorting for proximity search.
+        """
+        # Get proximity search parameters
+        user_lat = request.GET.get('user_latitude')
+        user_lon = request.GET.get('user_longitude')
+        
+        # Get the filtered queryset
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Calculate distances and add to results
+        if user_lat and user_lon:
+            try:
+                user_lat = Decimal(user_lat)
+                user_lon = Decimal(user_lon)
+                
+                # Calculate distance for each vehicle
+                vehicles_with_distance = []
+                for vehicle in queryset:
+                    if vehicle.latitude and vehicle.longitude:
+                        distance_km = haversine_distance(
+                            user_lat, user_lon,
+                            vehicle.latitude, vehicle.longitude
+                        )
+                        vehicles_with_distance.append((vehicle, distance_km))
+                    else:
+                        # Vehicles without coordinates go to the end
+                        vehicles_with_distance.append((vehicle, float('inf')))
+                
+                # Sort by distance (closest first)
+                vehicles_with_distance.sort(key=lambda x: x[1])
+                
+                # Apply pagination
+                page = self.paginate_queryset([v[0] for v in vehicles_with_distance])
+                if page is not None:
+                    serializer = self.get_serializer(page, many=True)
+                    response_data = serializer.data
+                    
+                    # Add distance to each vehicle
+                    distance_map = {v[0].id: v[1] for v in vehicles_with_distance}
+                    for item in response_data:
+                        vehicle_id = item['id']
+                        if vehicle_id in distance_map:
+                            distance = distance_map[vehicle_id]
+                            if distance != float('inf'):
+                                item['distance_km'] = round(distance, 2)
+                                item['distance_display'] = get_distance_display(distance)
+                    
+                    return self.get_paginated_response(response_data)
+                
+                serializer = self.get_serializer([v[0] for v in vehicles_with_distance], many=True)
+                response_data = serializer.data
+                
+                # Add distance to each vehicle
+                distance_map = {v[0].id: v[1] for v in vehicles_with_distance}
+                for item in response_data:
+                    vehicle_id = item['id']
+                    if vehicle_id in distance_map:
+                        distance = distance_map[vehicle_id]
+                        if distance != float('inf'):
+                            item['distance_km'] = round(distance, 2)
+                            item['distance_display'] = get_distance_display(distance)
+                
+                return Response(response_data)
+            
+            except (ValueError, InvalidOperation):
+                pass  # Fall through to normal list behavior
+        
+        # Normal list behavior (no proximity search)
         # Generate cache key based on user role and filters
         cache_key = f"vehicle_list_{request.user.role}_{request.user.id}_{request.GET.urlencode()}"
         cached_data = cache.get(cache_key)
@@ -145,6 +218,18 @@ class VehicleViewSet(viewsets.ModelViewSet):
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['get'])
+    def inspection_slots(self, request, pk=None):
+        """Get available inspection slots for a vehicle"""
+        vehicle = self.get_object()
+        slots = vehicle.inspection_slots.filter(
+            is_available=True,
+            date__gte=timezone.now().date()
+        ).order_by('date', 'start_time')
+        
+        serializer = VehicleInspectionSlotSerializer(slots, many=True)
+        return Response(serializer.data)
     
     @action(detail=True, methods=['get'])
     def videos(self, request, pk=None):
@@ -307,4 +392,207 @@ class OfferViewSet(viewsets.ModelViewSet):
         offer.save()
         
         serializer = self.get_serializer(offer)
+        return Response(serializer.data)
+
+
+class VehicleInspectionSlotViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing vehicle inspection slots.
+    Dealers can create and manage slots, buyers can view available slots.
+    """
+    queryset = VehicleInspectionSlot.objects.all()
+    serializer_class = VehicleInspectionSlotSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['vehicle', 'date', 'is_available']
+    ordering_fields = ['date', 'start_time']
+    ordering = ['date', 'start_time']
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        
+        # Admins see all slots
+        if user.is_admin():
+            return queryset
+        
+        # Dealers see only their vehicles' slots
+        if user.is_dealer():
+            return queryset.filter(vehicle__dealer=user)
+        
+        # Buyers see only available future slots
+        if user.is_buyer():
+            return queryset.filter(
+                is_available=True,
+                date__gte=timezone.now().date()
+            )
+        
+        return queryset.none()
+    
+    def perform_create(self, serializer):
+        """Only dealers and admins can create inspection slots"""
+        if not (self.request.user.is_dealer() or self.request.user.is_admin()):
+            raise permissions.PermissionDenied("Only dealers can create inspection slots")
+        
+        serializer.save()
+
+
+class InspectionAppointmentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing inspection appointments.
+    Buyers can create appointments, dealers can view and manage them.
+    """
+    queryset = InspectionAppointment.objects.select_related(
+        'buyer', 'slot', 'slot__vehicle', 'slot__vehicle__dealer'
+    ).all()
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status', 'slot__vehicle', 'interested_in_purchase']
+    ordering_fields = ['created_at', 'slot__date']
+    ordering = ['-created_at']
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return InspectionAppointmentCreateSerializer
+        return InspectionAppointmentSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        
+        # Admins see all appointments
+        if user.is_admin():
+            return queryset
+        
+        # Dealers see only appointments for their vehicles
+        if user.is_dealer():
+            return queryset.filter(slot__vehicle__dealer=user)
+        
+        # Buyers see only their own appointments
+        if user.is_buyer():
+            return queryset.filter(buyer=user)
+        
+        return queryset.none()
+    
+    def perform_create(self, serializer):
+        """Auto-assign buyer when creating appointment"""
+        if not self.request.user.is_buyer():
+            raise permissions.PermissionDenied("Only buyers can book inspection appointments")
+        
+        serializer.save(buyer=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def confirm(self, request, pk=None):
+        """Confirm an appointment (dealers only)"""
+        appointment = self.get_object()
+        
+        if request.user != appointment.dealer and not request.user.is_admin():
+            return Response(
+                {'error': 'Only the vehicle dealer can confirm appointments'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if appointment.status != 'pending':
+            return Response(
+                {'error': 'Can only confirm pending appointments'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        appointment.status = 'confirmed'
+        appointment.confirmed_at = timezone.now()
+        appointment.save()
+        
+        serializer = self.get_serializer(appointment)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def complete(self, request, pk=None):
+        """Mark appointment as completed (dealers only)"""
+        appointment = self.get_object()
+        
+        if request.user != appointment.dealer and not request.user.is_admin():
+            return Response(
+                {'error': 'Only the vehicle dealer can complete appointments'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if appointment.status != 'confirmed':
+            return Response(
+                {'error': 'Can only complete confirmed appointments'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        appointment.status = 'completed'
+        appointment.completed_at = timezone.now()
+        
+        # Update dealer notes if provided
+        if 'dealer_notes' in request.data:
+            appointment.dealer_notes = request.data['dealer_notes']
+        
+        appointment.save()
+        
+        serializer = self.get_serializer(appointment)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Cancel an appointment"""
+        appointment = self.get_object()
+        
+        # Buyers can cancel their own appointments, dealers can cancel any
+        if (request.user != appointment.buyer and 
+            request.user != appointment.dealer and 
+            not request.user.is_admin()):
+            return Response(
+                {'error': 'You do not have permission to cancel this appointment'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if appointment.status in ['completed', 'cancelled', 'no_show']:
+            return Response(
+                {'error': 'Cannot cancel this appointment'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        appointment.status = 'cancelled'
+        appointment.cancelled_at = timezone.now()
+        
+        # Save cancellation reason if provided
+        if 'cancellation_reason' in request.data:
+            if request.user == appointment.buyer:
+                appointment.buyer_notes = f"{appointment.buyer_notes}\nCancellation: {request.data['cancellation_reason']}"
+            else:
+                appointment.dealer_notes = f"{appointment.dealer_notes}\nCancellation: {request.data['cancellation_reason']}"
+        
+        appointment.save()
+        
+        serializer = self.get_serializer(appointment)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def add_feedback(self, request, pk=None):
+        """Add feedback and ratings after inspection (buyers only)"""
+        appointment = self.get_object()
+        
+        if request.user != appointment.buyer:
+            return Response(
+                {'error': 'Only the buyer can add feedback'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if appointment.status != 'completed':
+            return Response(
+                {'error': 'Can only add feedback for completed appointments'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update feedback fields
+        appointment.inspection_feedback = request.data.get('inspection_feedback', appointment.inspection_feedback)
+        appointment.vehicle_rating = request.data.get('vehicle_rating', appointment.vehicle_rating)
+        appointment.dealer_rating = request.data.get('dealer_rating', appointment.dealer_rating)
+        appointment.interested_in_purchase = request.data.get('interested_in_purchase', appointment.interested_in_purchase)
+        
+        appointment.save()
+        
+        serializer = self.get_serializer(appointment)
         return Response(serializer.data)

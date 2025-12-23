@@ -36,6 +36,7 @@ class PaymentMethod(models.Model):
         ('mobile_money', 'Mobile Money'),
         ('crypto', 'Cryptocurrency'),
         ('cash', 'Cash'),
+        ('interac_etransfer', 'Interac e-Transfer'),  # PHASE 1: Canadian payment method
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payment_methods')
@@ -57,6 +58,27 @@ class PaymentMethod(models.Model):
     mobile_provider = models.CharField(max_length=100, blank=True, help_text="e.g., M-Pesa, MTN Mobile Money")
     mobile_number = models.CharField(max_length=20, blank=True)
     
+    # PHASE 1: Interac e-Transfer details (Canadian payment method)
+    etransfer_email = models.EmailField(
+        blank=True,
+        help_text="Email address registered for Interac e-Transfer"
+    )
+    etransfer_security_question = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Security question for e-Transfer"
+    )
+    etransfer_security_answer = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Security answer (stored securely)"
+    )
+    etransfer_reference_number = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Interac reference number for completed transfer"
+    )
+    
     # General
     is_default = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
@@ -75,6 +97,8 @@ class PaymentMethod(models.Model):
             return f"{self.bank_name} •••• {self.bank_account_last4}"
         elif self.type == 'mobile_money':
             return f"{self.mobile_provider} {self.mobile_number}"
+        elif self.type == 'interac_etransfer':  # PHASE 1: Interac display
+            return f"Interac e-Transfer ({self.etransfer_email})"
         return f"{self.get_type_display()}"
     
     def save(self, *args, **kwargs):

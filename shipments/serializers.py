@@ -148,3 +148,4 @@ class ShipmentSerializer(serializers.ModelSerializer):
     def get_has_gps_tracking(self, obj):
         """Check if shipment has active GPS tracking"""
         return obj.current_latitude is not None and obj.current_longitude is not None
+

@@ -64,8 +64,8 @@ def deal_pipeline(request):
         .values('status')
         .annotate(
             count=Count('id'),
-            total_value=Sum('final_price'),
-            avg_value=Avg('final_price')
+            total_value=Sum('agreed_price_cad'),
+            avg_value=Avg('agreed_price_cad')
         )
         .order_by('-count')
     )
@@ -73,8 +73,8 @@ def deal_pipeline(request):
     # Total deals and value
     totals = Deal.objects.aggregate(
         total_deals=Count('id'),
-        total_value=Sum('final_price'),
-        avg_deal_value=Avg('final_price')
+        total_value=Sum('agreed_price_cad'),
+        avg_deal_value=Avg('agreed_price_cad')
     )
     
     return Response({
@@ -151,8 +151,8 @@ def dealer_performance(request):
         .annotate(
             total_deals=Count('id'),
             completed_deals=Count('id', filter=Q(status='completed')),
-            total_revenue=Sum('final_price', filter=Q(status='completed')),
-            avg_deal_value=Avg('final_price', filter=Q(status='completed')),
+            total_revenue=Sum('agreed_price_cad', filter=Q(status='completed')),
+            avg_deal_value=Avg('agreed_price_cad', filter=Q(status='completed')),
             conversion_rate=Count('id', filter=Q(status='completed')) * 100.0 / Count('id')
         )
         .order_by('-total_revenue')
@@ -193,11 +193,11 @@ def buyer_behavior(request):
     
     # Price range distribution
     price_ranges = {
-        'under_10k': Vehicle.objects.filter(created_at__gte=start_date, price__lt=10000).count(),
-        '10k_20k': Vehicle.objects.filter(created_at__gte=start_date, price__gte=10000, price__lt=20000).count(),
-        '20k_30k': Vehicle.objects.filter(created_at__gte=start_date, price__gte=20000, price__lt=30000).count(),
-        '30k_50k': Vehicle.objects.filter(created_at__gte=start_date, price__gte=30000, price__lt=50000).count(),
-        'over_50k': Vehicle.objects.filter(created_at__gte=start_date, price__gte=50000).count(),
+        'under_10k': Vehicle.objects.filter(created_at__gte=start_date, price_cad__lt=10000).count(),
+        '10k_20k': Vehicle.objects.filter(created_at__gte=start_date, price_cad__gte=10000, price_cad__lt=20000).count(),
+        '20k_30k': Vehicle.objects.filter(created_at__gte=start_date, price_cad__gte=20000, price_cad__lt=30000).count(),
+        '30k_50k': Vehicle.objects.filter(created_at__gte=start_date, price_cad__gte=30000, price_cad__lt=50000).count(),
+        'over_50k': Vehicle.objects.filter(created_at__gte=start_date, price_cad__gte=50000).count(),
     }
     
     # Condition preference
@@ -259,7 +259,7 @@ def inventory_insights(request):
         .annotate(period=TruncDate('created_at'))
         .values('period')
         .annotate(
-            avg_price=Avg('price'),
+            avg_price=Avg('price_cad'),
             vehicle_count=Count('id')
         )
         .order_by('period')

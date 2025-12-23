@@ -332,10 +332,11 @@ export default function Documents({ dealId, showUpload = true }: DocumentsProps)
 
           {/* Type filter */}
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
+              aria-label="Filter documents by type"
               className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
             >
               <option value="all">{language === 'fr' ? 'Tous les types' : 'All Types'}</option>
@@ -349,10 +350,11 @@ export default function Documents({ dealId, showUpload = true }: DocumentsProps)
 
           {/* Status filter */}
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
+              aria-label="Filter documents by status"
               className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
             >
               <option value="all">{language === 'fr' ? 'Tous les statuts' : 'All Statuses'}</option>
@@ -607,10 +609,11 @@ function UploadModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {!dealId && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2" htmlFor="deal-select">
                 {language === 'fr' ? 'Deal' : 'Deal'}
               </label>
               <select
+                id="deal-select"
                 value={selectedDeal}
                 onChange={(e) => setSelectedDeal(Number(e.target.value))}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -627,10 +630,11 @@ function UploadModal({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2" htmlFor="document-type-select">
               {language === 'fr' ? 'Type de document' : 'Document Type'}
             </label>
             <select
+              id="document-type-select"
               value={documentType}
               onChange={(e) => setDocumentType(e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -645,10 +649,11 @@ function UploadModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2" htmlFor="file-upload">
               {language === 'fr' ? 'Fichier' : 'File'}
             </label>
             <input
+              id="file-upload"
               type="file"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -726,8 +731,8 @@ function ViewDocumentModal({
           <h3 className="text-xl font-bold text-slate-900">
             {documentTypes.find((t) => t.value === document.document_type)?.label || document.document_type}
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-            <XCircle className="w-6 h-6" />
+          <button onClick={onClose} aria-label="Close document preview" className="text-slate-400 hover:text-slate-600">
+            <XCircle className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
 
@@ -735,7 +740,7 @@ function ViewDocumentModal({
           {/* Document preview iframe */}
           <div className="bg-slate-100 rounded-lg h-96 mb-6 flex items-center justify-center">
             {document.file.toLowerCase().endsWith('.pdf') ? (
-              <iframe src={document.file} className="w-full h-full rounded-lg" />
+              <iframe src={document.file} title="Document preview" className="w-full h-full rounded-lg" />
             ) : (
               <img src={document.file} alt="Document" className="max-w-full max-h-full object-contain rounded-lg" />
             )}

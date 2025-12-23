@@ -127,8 +127,8 @@ export default function DealDetailModal({ isOpen, onClose, dealId }: DealDetailM
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white hover:text-amber-100">
-            <X className="w-6 h-6" />
+          <button onClick={onClose} aria-label="Close deal details" className="text-white hover:text-amber-100">
+            <X className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
 
@@ -152,6 +152,7 @@ export default function DealDetailModal({ isOpen, onClose, dealId }: DealDetailM
 
           {/* Progress Bar */}
           <div className="relative h-2 bg-slate-200 rounded-full overflow-hidden">
+            {/* eslint-disable-next-line react/forbid-dom-props */}
             <div
               className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-500"
               style={{
@@ -351,8 +352,8 @@ export default function DealDetailModal({ isOpen, onClose, dealId }: DealDetailM
                         </p>
                       </div>
                     </div>
-                    <button className="text-amber-600 hover:text-amber-700">
-                      <Download className="w-5 h-5" />
+                    <button aria-label="Download document" className="text-amber-600 hover:text-amber-700">
+                      <Download className="w-5 h-5" aria-hidden="true" />
                     </button>
                   </div>
                 ))}

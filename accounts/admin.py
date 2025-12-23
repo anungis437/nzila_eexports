@@ -5,16 +5,42 @@ from django.utils.html import format_html
 from .models import User
 from .compliance_models import DataBreachLog, ConsentHistory, DataRetentionPolicy, PrivacyImpactAssessment
 
+# Import dealer verification admin (will self-register)
+from .dealer_verification_admin import DealerLicenseAdmin, DealerVerificationAdmin
+
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ['username', 'email', 'role', 'company_name', 'country', 'is_active', 'consent_status']
-    list_filter = ['role', 'is_active', 'country', 'data_processing_consent', 'marketing_consent']
-    search_fields = ['username', 'email', 'company_name']
+    list_display = ['username', 'email', 'role', 'company_name', 'country', 'is_diaspora_buyer', 'is_active', 'consent_status']
+    list_filter = ['role', 'is_active', 'country', 'is_diaspora_buyer', 'canadian_province', 
+                   'data_processing_consent', 'marketing_consent']
+    search_fields = ['username', 'email', 'company_name', 'canadian_city', 'destination_country']
     
     fieldsets = BaseUserAdmin.fieldsets + (
         (_('Role & Company'), {
             'fields': ('role', 'company_name', 'phone', 'address', 'country', 'preferred_language')
+        }),
+        (_('Canadian Diaspora Buyer Profile (Phase 1)'), {
+            'fields': (
+                'is_diaspora_buyer', 'canadian_city', 'canadian_province', 'canadian_postal_code',
+                'destination_country', 'destination_city', 'buyer_type', 'residency_status',
+                'prefers_in_person_inspection'
+            ),
+            'classes': ('collapse',)
+        }),
+        (_('Dealer Showroom Information (Phase 1)'), {
+            'fields': (
+                'showroom_address', 'showroom_city', 'showroom_province', 'showroom_postal_code',
+                'showroom_phone', 'business_hours', 'allows_test_drives', 'requires_appointment'
+            ),
+            'classes': ('collapse',)
+        }),
+        (_('Canadian Phone Support (Phase 1)'), {
+            'fields': (
+                'toll_free_number', 'local_phone_number', 'phone_support_hours', 
+                'preferred_contact_method'
+            ),
+            'classes': ('collapse',)
         }),
         (_('PIPEDA & Law 25 Compliance'), {
             'fields': (

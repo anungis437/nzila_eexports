@@ -90,6 +90,23 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ language
     );
   }
 
+  if (!summary || !summary.metrics) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-red-800">Unable to Load Analytics</h2>
+            <p className="text-red-700 mt-2">
+              {language === 'fr' 
+                ? 'Impossible de charger les données d\'analyse. Veuillez réessayer plus tard.'
+                : 'Unable to load analytics data. Please try again later.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -130,17 +147,17 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ language
                 <DollarSign className="w-6 h-6 text-blue-600" />
               </div>
               <div className={`flex items-center gap-1 ${
-                summary.metrics.revenue_growth >= 0 ? 'text-green-600' : 'text-red-600'
+                (summary.metrics.revenue_growth || 0) >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-                {summary.metrics.revenue_growth >= 0 ? (
+                {(summary.metrics.revenue_growth || 0) >= 0 ? (
                   <TrendingUp className="w-4 h-4" />
                 ) : (
                   <TrendingDown className="w-4 h-4" />
                 )}
-                <span className="text-sm font-medium">{Math.abs(summary.metrics.revenue_growth).toFixed(1)}%</span>
+                <span className="text-sm font-medium">{Math.abs(summary.metrics.revenue_growth || 0).toFixed(1)}%</span>
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(summary.metrics.total_revenue)}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(summary.metrics.total_revenue || 0)}</h3>
             <p className="text-sm text-gray-600 mt-1">
               {language === 'fr' ? 'Revenus totaux' : 'Total Revenue'}
             </p>
@@ -153,17 +170,17 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ language
                 <ShoppingCart className="w-6 h-6 text-green-600" />
               </div>
               <div className={`flex items-center gap-1 ${
-                summary.metrics.deals_growth >= 0 ? 'text-green-600' : 'text-red-600'
+                (summary.metrics.deals_growth || 0) >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-                {summary.metrics.deals_growth >= 0 ? (
+                {(summary.metrics.deals_growth || 0) >= 0 ? (
                   <TrendingUp className="w-4 h-4" />
                 ) : (
                   <TrendingDown className="w-4 h-4" />
                 )}
-                <span className="text-sm font-medium">{Math.abs(summary.metrics.deals_growth).toFixed(1)}%</span>
+                <span className="text-sm font-medium">{Math.abs(summary.metrics.deals_growth || 0).toFixed(1)}%</span>
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{summary.metrics.total_deals}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{summary.metrics.total_deals || 0}</h3>
             <p className="text-sm text-gray-600 mt-1">
               {language === 'fr' ? 'Transactions totales' : 'Total Deals'}
             </p>
@@ -176,7 +193,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ language
                 <Activity className="w-6 h-6 text-purple-600" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{summary.metrics.conversion_rate}%</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{summary.metrics.conversion_rate || 0}%</h3>
             <p className="text-sm text-gray-600 mt-1">
               {language === 'fr' ? 'Taux de conversion' : 'Conversion Rate'}
             </p>
@@ -189,7 +206,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ language
                 <Package className="w-6 h-6 text-orange-600" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{summary.metrics.available_vehicles}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{summary.metrics.available_vehicles || 0}</h3>
             <p className="text-sm text-gray-600 mt-1">
               {language === 'fr' ? 'Inventaire disponible' : 'Available Inventory'}
             </p>

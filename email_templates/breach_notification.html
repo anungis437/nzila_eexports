@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Breach Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #d32f2f;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            background-color: #fff3e0;
+            padding: 30px;
+            border: 2px solid #ff9800;
+        }
+        .alert-box {
+            background-color: #ffebee;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #d32f2f;
+        }
+        .steps {
+            background-color: white;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .steps li {
+            margin-bottom: 10px;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚠️ Important Security Notice</h1>
+        <p>Data Breach Notification</p>
+    </div>
+    
+    <div class="content">
+        <div class="alert-box">
+            <h2>We are writing to inform you about a security incident</h2>
+            <p><strong>Severity:</strong> {{ severity }}</p>
+            <p><strong>Discovery Date:</strong> {{ discovery_date|date:"F d, Y" }}</p>
+        </div>
+        
+        <h3>What Happened?</h3>
+        <p>{{ breach.description }}</p>
+        
+        <h3>What Information Was Involved?</h3>
+        <p>{{ data_types }}</p>
+        
+        <h3>What We Are Doing</h3>
+        <div class="steps">
+            {{ steps_taken|linebreaks }}
+        </div>
+        
+        <h3>What You Should Do</h3>
+        <div class="steps">
+            <ul>
+                <li>Monitor your accounts for any suspicious activity</li>
+                <li>Change your password immediately if you haven't already</li>
+                <li>Enable two-factor authentication for added security</li>
+                <li>Be cautious of phishing emails that may reference this incident</li>
+                <li>Contact us if you notice any unusual activity</li>
+            </ul>
+        </div>
+        
+        <h3>How to Contact Us</h3>
+        <p>If you have any questions or concerns about this incident, please contact our Privacy Office:</p>
+        <p>
+            <strong>Email:</strong> {{ privacy_email }}<br>
+            <strong>Phone:</strong> {{ support_phone }}
+        </p>
+        
+        <p>We take the security and privacy of your information very seriously and sincerely apologize for any inconvenience or concern this incident may cause.</p>
+    </div>
+    
+    <div class="footer">
+        <p>{{ company_name }}</p>
+        <p>This is an important security notification required by law.</p>
+    </div>
+</body>
+</html>

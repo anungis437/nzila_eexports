@@ -98,6 +98,7 @@ export default function DealCard({ deal, onClick }: DealCardProps) {
     >
       {/* Progress Bar */}
       <div className="h-1 bg-slate-100">
+        {/* eslint-disable-next-line no-inline-styles */}
         <div
           className={`h-full transition-all duration-500 ${
             deal.status === 'completed'

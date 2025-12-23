@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { motion } from 'framer-motion'
 import { Car, Users, FileText, DollarSign, Package, Truck } from 'lucide-react'
 import BrokerDashboard from '../components/BrokerDashboard'
+import QuickLinks from '../components/QuickLinks'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -166,62 +167,8 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">
-            {t('recentActivity')}
-          </h3>
-          <div className="space-y-4">
-            <p className="text-slate-500 text-center py-8">{t('noData')}</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">
-            {t('quickActions')}
-          </h3>
-          <div className="space-y-3">
-            {isBuyer ? (
-              // Buyer quick actions
-              <>
-                <button className="w-full text-left px-4 py-3 rounded-lg border border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition">
-                  <div className="font-medium text-slate-900">
-                    {language === 'fr' ? 'Parcourir les véhicules' : 'Browse Vehicles'}
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    {language === 'fr' ? 'Voir l\'inventaire disponible' : 'View available inventory'}
-                  </div>
-                </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg border border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition">
-                  <div className="font-medium text-slate-900">
-                    {language === 'fr' ? 'Mes achats' : 'My Purchases'}
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    {language === 'fr' ? 'Voir l\'état de vos achats' : 'View your purchase status'}
-                  </div>
-                </button>
-              </>
-            ) : (
-              // Dealer/Broker quick actions
-              <>
-                <button className="w-full text-left px-4 py-3 rounded-lg border border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition">
-                  <div className="font-medium text-slate-900">{t('addVehicle')}</div>
-                  <div className="text-sm text-slate-500">
-                    {language === 'fr' ? 'Ajouter un nouveau véhicule' : 'Add a new vehicle'}
-                  </div>
-                </button>
-                <button className="w-full text-left px-4 py-3 rounded-lg border border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition">
-                  <div className="font-medium text-slate-900">{t('submitLead')}</div>
-                  <div className="text-sm text-slate-500">
-                    {language === 'fr' ? 'Créer une nouvelle demande' : 'Create a new lead'}
-                  </div>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Quick Links */}
+      <QuickLinks userRole={user?.role || 'buyer'} />
     </div>
   )
 }

@@ -84,6 +84,9 @@ INSTALLED_APPS = [
     'analytics_dashboard',
     'chat',
     'reviews',
+    'documents',  # PHASE 2 - Feature 5: Export Documentation
+    'inspections',  # PHASE 2 - Feature 6: Third-Party Inspection Integration
+    'financing',  # PHASE 3 - Feature 7: Financing Calculator Enhancement
 ]
 
 MIDDLEWARE = [
@@ -311,9 +314,40 @@ SAAQ_API_KEY = config('SAAQ_API_KEY', default=None)  # Quebec
 WHATSAPP_API_TOKEN = config('WHATSAPP_API_TOKEN', default=None)
 WHATSAPP_PHONE_NUMBER_ID = config('WHATSAPP_PHONE_NUMBER_ID', default=None)
 WHATSAPP_VERIFY_TOKEN = config('WHATSAPP_VERIFY_TOKEN', default=None)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# ============================================================================
+# EMAIL CONFIGURATION
+# ============================================================================
+
+# Email Backend Configuration
+# Options: 'django.core.mail.backends.console.EmailBackend' (development)
+#         'django.core.mail.backends.smtp.EmailBackend' (production)
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+
+# SMTP Settings (for production with SendGrid or AWS SES)
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.sendgrid.net')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='apikey')  # 'apikey' for SendGrid
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default=None)  # SendGrid API key or SMTP password
+
+# From Addresses
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@nzilaventures.com')
 ADMIN_EMAIL = config('ADMIN_EMAIL', default='info@nzilaventures.com')
+SUPPORT_EMAIL = config('SUPPORT_EMAIL', default='support@nzilaventures.com')
+PRIVACY_EMAIL = config('PRIVACY_EMAIL', default='privacy@nzilaventures.com')
+
+# Company Information (for email templates)
+COMPANY_NAME = config('COMPANY_NAME', default='Nzila Export')
+SUPPORT_PHONE = config('SUPPORT_PHONE', default='1-800-NZILA-EX')
+PRIVACY_POLICY_URL = config('PRIVACY_POLICY_URL', default='https://nzilaexport.com/privacy')
+MANAGE_PREFERENCES_URL = config('MANAGE_PREFERENCES_URL', default='https://nzilaexport.com/preferences')
+DASHBOARD_URL = config('DASHBOARD_URL', default='https://nzilaexport.com/dashboard')
+TRACKING_URL = config('TRACKING_URL', default='https://nzilaexport.com/track')
+
+# Email Template Directory
+TEMPLATES[0]['DIRS'].append(BASE_DIR / 'email_templates')
+
 
 # Exchange Rate API Configuration
 # Get free API key from: https://www.exchangerate-api.com/
@@ -344,10 +378,12 @@ INTERNAL_IPS = [
     'localhost',
 ]
 
-# Sentry Configuration - Error Tracking & Performance Monitoring
+# Sentry Configuration - Error Tracking & Performance Monitoring (APM)
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 SENTRY_DSN = config('SENTRY_DSN', default='')
 SENTRY_ENVIRONMENT = config('SENTRY_ENVIRONMENT', default='development')
@@ -356,17 +392,65 @@ if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[
-            DjangoIntegration(),
-            CeleryIntegration(),
+            DjangoIntegration(
+                # Track SQL queries for performance monitoring
+                transaction_style='url',
+                middleware_spans=True,
+                signals_spans=True,
+                cache_spans=True,
+            ),
+            CeleryIntegration(
+                # Track Celery task performance
+                monitor_beat_tasks=True,
+                propagate_traces=True,
+            ),
+            RedisIntegration(),
+            LoggingIntegration(
+                level=None,  # Capture all log levels
+                event_level=None  # Don't create events from logs automatically
+            ),
         ],
-        # Performance monitoring - sample 10% of transactions
-        traces_sample_rate=0.1,
-        # Profile 10% of transactions
-        profiles_sample_rate=0.1,
+        # Performance monitoring - sample rate based on environment
+        # Production: 10% (reduce overhead), Staging: 50%, Development: 100%
+        traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=0.1, cast=float),
+        
+        # Profile 10% of transactions for detailed performance analysis
+        profiles_sample_rate=config('SENTRY_PROFILES_SAMPLE_RATE', default=0.1, cast=float),
+        
         # Send errors from this environment
         environment=SENTRY_ENVIRONMENT,
-        # Release tracking
+        
+        # Release tracking (for correlating errors to deployments)
         release=config('APP_VERSION', default='1.0.0'),
+        
         # Include request headers and IP for users (PII data)
-        send_default_pii=True,
+        send_default_pii=config('SENTRY_SEND_PII', default=True, cast=bool),
+        
+        # Ignore common errors that don't need tracking
+        ignore_errors=[
+            KeyboardInterrupt,
+            BrokenPipeError,
+        ],
+        
+        # Before send callback for filtering/enriching events
+        before_send=lambda event, hint: event if not DEBUG else None,  # Don't send in debug mode
+        
+        # Set max_breadcrumbs to track user actions leading to errors
+        max_breadcrumbs=50,
+        
+        # Attach local variables to stack traces (helpful for debugging)
+        attach_stacktrace=True,
+        
+        # Enable automatic performance instrumentation
+        auto_enabling_integrations=True,
+        
+        # Database query performance threshold (alert if query >100ms)
+        _experiments={
+            "record_sql_params": True,  # Record SQL query parameters
+        },
     )
+    
+    # Configure slow query detection (queries slower than 100ms)
+    import logging
+    logger = logging.getLogger('django.db.backends')
+    logger.setLevel(logging.DEBUG if DEBUG else logging.WARNING)

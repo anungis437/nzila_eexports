@@ -19,6 +19,15 @@ import {
   CreditCard,
   Shield,
   MessageSquare,
+  TrendingUp,
+  Calculator,
+  BadgeCheck,
+  BarChart2,
+  ChevronDown,
+  ChevronRight,
+  Heart,
+  GitCompare,
+  BookmarkCheck,
 } from 'lucide-react'
 import { Button } from './ui/button'
 import {
@@ -40,6 +49,29 @@ export default function Layout() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const { data: unreadCount } = useUnreadCount()
+  
+  // Collapsible sections state - Load from localStorage
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('collapsedNavSections')
+    return saved ? new Set(JSON.parse(saved)) : new Set()
+  })
+  
+  // Save collapsed state to localStorage
+  useEffect(() => {
+    localStorage.setItem('collapsedNavSections', JSON.stringify(Array.from(collapsedSections)))
+  }, [collapsedSections])
+  
+  const toggleSection = (sectionTitle: string) => {
+    setCollapsedSections(prev => {
+      const next = new Set(prev)
+      if (next.has(sectionTitle)) {
+        next.delete(sectionTitle)
+      } else {
+        next.add(sectionTitle)
+      }
+      return next
+    })
+  }
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -87,27 +119,93 @@ export default function Layout() {
     }
   }, [location.pathname, language])
 
-  const navItems = [
-    { name: t('dashboard'), path: '/dashboard', icon: LayoutDashboard, permission: 'all' },
-    { name: t('vehicles'), path: '/vehicles', icon: Car, permission: 'all' },
-    { name: language === 'fr' ? 'Messages' : 'Messages', path: '/messages', icon: MessageSquare, permission: 'all', badge: unreadCount?.unread_count },
-    { name: t('leads'), path: '/leads', icon: Users, permission: ['broker', 'admin'] },
-    { name: t('deals'), path: '/deals', icon: FileText, permission: 'all' },
-    { name: t('commissions'), path: '/commissions', icon: DollarSign, permission: ['broker', 'dealer', 'admin'] },
-    { name: t('shipments'), path: '/shipments', icon: Package, permission: ['admin', 'dealer'] },
-    { name: language === 'fr' ? 'Documents' : 'Documents', path: '/documents', icon: FolderOpen, permission: 'all' },
-    { name: language === 'fr' ? 'Paiements' : 'Payments', path: '/payments', icon: CreditCard, permission: 'all' },
-    { name: language === 'fr' ? 'Piste d\'audit' : 'Audit Trail', path: '/audit-trail', icon: Shield, permission: ['admin'] },
-    { name: t('settings'), path: '/settings', icon: Settings, permission: 'all' },
+  const navSections = [
+    {
+      title: language === 'fr' ? 'Aperçu' : 'Overview',
+      items: [
+        { name: t('dashboard'), path: '/dashboard', icon: LayoutDashboard, permission: 'all' },
+        { name: language === 'fr' ? 'Messages' : 'Messages', path: '/messages', icon: MessageSquare, permission: 'all', badge: unreadCount?.unread_count },
+      ]
+    },
+    {
+      title: language === 'fr' ? 'Gestion' : 'Management',
+      items: [
+        { name: t('vehicles'), path: '/vehicles', icon: Car, permission: 'all' },
+        { name: language === 'fr' ? 'Favoris' : 'Favorites', path: '/favorites', icon: Heart, permission: ['buyer'] },
+        { name: language === 'fr' ? 'Comparer' : 'Compare', path: '/compare', icon: GitCompare, permission: ['buyer'] },
+        { name: language === 'fr' ? 'Recherches sauvegardées' : 'Saved Searches', path: '/saved-searches', icon: BookmarkCheck, permission: ['buyer'] },
+        { name: t('leads'), path: '/leads', icon: Users, permission: ['broker', 'admin'] },
+        { name: t('deals'), path: '/deals', icon: FileText, permission: 'all' },
+        { name: t('shipments'), path: '/shipments', icon: Package, permission: ['admin', 'dealer', 'buyer'] },
+      ]
+    },
+    {
+      title: language === 'fr' ? 'Finance' : 'Finance',
+      items: [
+        { name: t('commissions'), path: '/commissions', icon: DollarSign, permission: ['broker', 'dealer', 'admin'] },
+        { name: language === 'fr' ? 'Financement' : 'Financing', path: '/financing', icon: Calculator, permission: 'all' },
+        { name: language === 'fr' ? 'Paiements' : 'Payments', path: '/payments', icon: CreditCard, permission: 'all' },
+      ]
+    },
+    {
+      title: language === 'fr' ? 'Analytique' : 'Analytics',
+      items: [
+        { name: language === 'fr' ? 'Analytique Admin' : 'Admin Analytics', path: '/analytics', icon: BarChart2, permission: ['admin'] },
+        { name: language === 'fr' ? 'Analytique Courtier' : 'Broker Analytics', path: '/broker-analytics', icon: TrendingUp, permission: ['broker', 'admin'] },
+      ]
+    },
+    {
+      title: language === 'fr' ? 'Sécurité & Conformité' : 'Security & Compliance',
+      items: [
+        { name: language === 'fr' ? 'Sécurité' : 'Security', path: '/security', icon: Shield, permission: ['admin'] },
+        { name: language === 'fr' ? 'Conformité' : 'Compliance', path: '/compliance', icon: FileText, permission: ['admin'] },
+        { name: language === 'fr' ? 'Sécurité des expéditions' : 'Shipment Security', path: '/shipment-security', icon: Package, permission: ['admin'] },
+      ]
+    },
+    {
+      title: language === 'fr' ? 'Opérations financières' : 'Financial Operations',
+      items: [
+        { name: language === 'fr' ? 'Taux d\'intérêt' : 'Interest Rates', path: '/interest-rates', icon: TrendingUp, permission: ['admin'] },
+        { name: language === 'fr' ? 'Factures' : 'Invoices', path: '/invoices', icon: FileText, permission: ['admin'] },
+        { name: language === 'fr' ? 'Transactions' : 'Transactions', path: '/transactions', icon: DollarSign, permission: ['admin'] },
+      ]
+    },
+    {
+      title: language === 'fr' ? 'Gestion des opérations' : 'Operations Management',
+      items: [
+        { name: language === 'fr' ? 'Inspections' : 'Inspections', path: '/inspections', icon: BadgeCheck, permission: ['admin'] },
+        { name: language === 'fr' ? 'Offres' : 'Offers', path: '/offers', icon: DollarSign, permission: ['admin'] },
+        { name: language === 'fr' ? 'Niveaux' : 'Tiers', path: '/tiers', icon: TrendingUp, permission: ['admin'] },
+        { name: language === 'fr' ? 'Modération des avis' : 'Review Moderation', path: '/review-moderation', icon: MessageSquare, permission: ['admin'] },
+      ]
+    },
+    {
+      title: language === 'fr' ? 'Système' : 'System',
+      items: [
+        { name: language === 'fr' ? 'Documents' : 'Documents', path: '/documents', icon: FolderOpen, permission: 'all' },
+        { name: language === 'fr' ? 'Vérification Concessionnaire' : 'Dealer Verification', path: '/dealer-verification', icon: BadgeCheck, permission: ['dealer', 'admin'] },
+        { name: language === 'fr' ? 'Piste d\'audit' : 'Audit Trail', path: '/audit-trail', icon: Shield, permission: ['admin'] },
+        { name: t('settings'), path: '/settings', icon: Settings, permission: 'all' },
+      ]
+    }
   ]
 
-  const filteredNav = navItems.filter((item) => {
-    if (item.permission === 'all') return true
-    if (Array.isArray(item.permission)) {
-      return item.permission.includes(user?.role || '')
-    }
-    return false
-  })
+  const filterNavItems = (items: typeof navSections[0]['items']) => {
+    return items.filter((item) => {
+      if (item.permission === 'all') return true
+      if (Array.isArray(item.permission)) {
+        return item.permission.includes(user?.role || '')
+      }
+      return false
+    })
+  }
+
+  const filteredSections = navSections
+    .map(section => ({
+      ...section,
+      items: filterNavItems(section.items)
+    }))
+    .filter(section => section.items.length > 0)
 
   const NavLink = ({ item }: { item: typeof navItems[0] }) => {
     const isActive = location.pathname === item.path
@@ -182,7 +280,7 @@ export default function Layout() {
             {/* Search button */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100 transition-all duration-200 mb-2"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100 transition-all duration-200 mb-4"
               aria-label={language === 'fr' ? 'Ouvrir la recherche (Commande+K)' : 'Open search (Ctrl+K)'}
             >
               <Search className="w-5 h-5" aria-hidden="true" />
@@ -197,8 +295,35 @@ export default function Layout() {
               </kbd>
             </button>
 
-            {filteredNav.map((item) => (
-              <NavLink key={item.path} item={item} />
+            {/* Sectioned Navigation */}
+            {filteredSections.map((section, sectionIdx) => (
+              <div key={section.title} className={sectionIdx > 0 ? 'mt-6' : ''}>
+                <button
+                  onClick={() => toggleSection(section.title)}
+                  className="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-50 rounded-lg transition-colors group"
+                  aria-expanded={!collapsedSections.has(section.title) ? 'true' : 'false'}
+                  aria-controls={`section-${section.title.replace(/\s+/g, '-').toLowerCase()}`}
+                >
+                  <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    {section.title}
+                  </h2>
+                  {collapsedSections.has(section.title) ? (
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" aria-hidden="true" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" aria-hidden="true" />
+                  )}
+                </button>
+                {!collapsedSections.has(section.title) && (
+                  <div 
+                    id={`section-${section.title.replace(/\s+/g, '-').toLowerCase()}`}
+                    className="space-y-1 mt-1 overflow-hidden transition-all duration-200"
+                  >
+                    {section.items.map((item) => (
+                      <NavLink key={item.path} item={item} />
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
@@ -327,8 +452,34 @@ export default function Layout() {
               className="p-4 space-y-1 mt-16"
               aria-label={language === 'fr' ? 'Navigation principale' : 'Main navigation'}
             >
-              {filteredNav.map((item) => (
-                <NavLink key={item.path} item={item} />
+              {filteredSections.map((section, sectionIdx) => (
+                <div key={section.title} className={sectionIdx > 0 ? 'mt-6' : ''}>
+                  <button
+                    onClick={() => toggleSection(section.title)}
+                    className="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-50 rounded-lg transition-colors group"
+                    aria-expanded={!collapsedSections.has(section.title) ? 'true' : 'false'}
+                    aria-controls={`mobile-section-${section.title.replace(/\s+/g, '-').toLowerCase()}`}
+                  >
+                    <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {section.title}
+                    </h2>
+                    {collapsedSections.has(section.title) ? (
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" aria-hidden="true" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" aria-hidden="true" />
+                    )}
+                  </button>
+                  {!collapsedSections.has(section.title) && (
+                    <div 
+                      id={`mobile-section-${section.title.replace(/\s+/g, '-').toLowerCase()}`}
+                      className="space-y-1 mt-1 overflow-hidden transition-all duration-200"
+                    >
+                      {section.items.map((item) => (
+                        <NavLink key={item.path} item={item} />
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </nav>
           </div>

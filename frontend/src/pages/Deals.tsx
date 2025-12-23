@@ -300,7 +300,7 @@ const { data: deals = [], isLoading } = useQuery({
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                   aria-label={language === 'fr' ? 'Vue en grille' : 'Grid view'}
-                  aria-pressed={viewMode === 'grid'}
+                  aria-pressed={viewMode === 'grid' ? 'true' : 'false'}
                 >
                   <Grid3x3 className="w-5 h-5" aria-hidden="true" />
                 </button>
@@ -312,7 +312,7 @@ const { data: deals = [], isLoading } = useQuery({
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                   aria-label={language === 'fr' ? 'Vue en liste' : 'List view'}
-                  aria-pressed={viewMode === 'list'}
+                  aria-pressed={viewMode === 'list' ? 'true' : 'false'}
                 >
                   <List className="w-5 h-5" aria-hidden="true" />
                 </button>

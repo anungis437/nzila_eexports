@@ -1,0 +1,873 @@
+openapi: 3.0.3
+info:
+  title: Nzila Exports Financial API
+  description: |
+    API for managing financial transactions, payment processing, and financing options
+    in the Nzila Exports vehicle trading platform.
+    
+    ## Features
+    - Retrieve deal financial terms and pricing
+    - Get payment schedules and milestones
+    - Access financing options and installment plans
+    - Process payments with automatic status updates
+    - Apply financing to deals with custom terms
+    
+    ## Base URL
+    - Development: `http://localhost:8000/api`
+    - Production: `https://api.nzilaexports.com/api`
+    
+    ## Authentication
+    All endpoints require JWT authentication via Bearer token in the Authorization header.
+    
+  version: 1.0.0
+  contact:
+    name: Nzila Exports API Support
+    email: api@nzilaexports.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8000/api
+    description: Development server
+  - url: https://api.nzilaexports.com/api
+    description: Production server
+
+tags:
+  - name: Financial Terms
+    description: Deal financial terms and pricing
+  - name: Payment Schedule
+    description: Payment milestones and schedules
+  - name: Financing
+    description: Financing options and installment plans
+  - name: Payments
+    description: Payment processing and transactions
+
+security:
+  - BearerAuth: []
+
+paths:
+  /deals/{deal_id}/financial-terms/:
+    get:
+      tags:
+        - Financial Terms
+      summary: Get deal financial terms
+      description: |
+        Retrieves comprehensive financial terms for a specific deal including:
+        - Total price and currency
+        - Payment progress (paid amount, remaining balance)
+        - Payment milestones breakdown
+        - Deal and vehicle details
+        
+        **Permissions**: Buyer, Dealer, or Admin
+      operationId: getDealFinancialTerms
+      parameters:
+        - name: deal_id
+          in: path
+          required: true
+          description: Unique identifier of the deal
+          schema:
+            type: integer
+            example: 123
+      responses:
+        '200':
+          description: Financial terms retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealFinancialTerms'
+              examples:
+                success:
+                  summary: Successful response
+                  value:
+                    id: 1
+                    deal:
+                      id: 123
+                      buyer_name: "John Doe"
+                      dealer_name: "Global Motors"
+                      vehicle:
+                        make: "Toyota"
+                        model: "Land Cruiser"
+                        year: 2022
+                    total_price: "45000.00"
+                    currency:
+                      code: "USD"
+                      symbol: "$"
+                    deposit_amount: "10000.00"
+                    deposit_percentage: "22.22"
+                    balance_amount: "35000.00"
+                    amount_paid: "15000.00"
+                    amount_remaining: "30000.00"
+                    payment_progress_percentage: "33.33"
+                    payment_milestones:
+                      - id: 1
+                        milestone_type: "deposit"
+                        name: "Initial Deposit"
+                        amount_due: "10000.00"
+                        due_date: "2024-01-15"
+                        status: "paid"
+                        amount_paid: "10000.00"
+                      - id: 2
+                        milestone_type: "progress"
+                        name: "First Progress Payment"
+                        amount_due: "15000.00"
+                        due_date: "2024-02-15"
+                        status: "paid"
+                        amount_paid: "5000.00"
+                      - id: 3
+                        milestone_type: "final"
+                        name: "Final Payment"
+                        amount_due: "20000.00"
+                        due_date: "2024-03-15"
+                        status: "pending"
+                        amount_paid: "0.00"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /deals/{deal_id}/payment-schedule/:
+    get:
+      tags:
+        - Payment Schedule
+      summary: Get payment schedule
+      description: |
+        Retrieves the complete payment schedule for a deal including:
+        - All payment milestones (deposit, progress, final)
+        - Payment status for each milestone
+        - Due dates and amounts
+        - Payment history
+        
+        **Permissions**: Buyer, Dealer, or Admin
+      operationId: getPaymentSchedule
+      parameters:
+        - name: deal_id
+          in: path
+          required: true
+          description: Unique identifier of the deal
+          schema:
+            type: integer
+            example: 123
+      responses:
+        '200':
+          description: Payment schedule retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentSchedule'
+              examples:
+                success:
+                  summary: Successful response
+                  value:
+                    deal_id: 123
+                    total_amount: "45000.00"
+                    amount_paid: "15000.00"
+                    amount_remaining: "30000.00"
+                    payment_progress: "33.33"
+                    milestones:
+                      - id: 1
+                        milestone_type: "deposit"
+                        name: "Initial Deposit"
+                        amount_due: "10000.00"
+                        amount_paid: "10000.00"
+                        due_date: "2024-01-15"
+                        status: "paid"
+                        is_overdue: false
+                      - id: 2
+                        milestone_type: "progress"
+                        name: "First Progress Payment"
+                        amount_due: "15000.00"
+                        amount_paid: "5000.00"
+                        due_date: "2024-02-15"
+                        status: "partial"
+                        is_overdue: false
+                      - id: 3
+                        milestone_type: "final"
+                        name: "Final Payment"
+                        amount_due: "20000.00"
+                        amount_paid: "0.00"
+                        due_date: "2024-03-15"
+                        status: "pending"
+                        is_overdue: false
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /deals/{deal_id}/financing/:
+    get:
+      tags:
+        - Financing
+      summary: Get financing details
+      description: |
+        Retrieves financing information for a deal including:
+        - Financing terms (rate, duration)
+        - Monthly installment amounts
+        - Payment schedule with dates
+        - Payment progress tracking
+        
+        **Permissions**: Buyer, Dealer, or Admin
+      operationId: getDealFinancing
+      parameters:
+        - name: deal_id
+          in: path
+          required: true
+          description: Unique identifier of the deal
+          schema:
+            type: integer
+            example: 123
+      responses:
+        '200':
+          description: Financing details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancingOption'
+              examples:
+                success:
+                  summary: Successful response
+                  value:
+                    id: 1
+                    deal_id: 123
+                    financed_amount: "35000.00"
+                    interest_rate: "8.50"
+                    term_months: 36
+                    monthly_payment: "1104.43"
+                    total_interest: "4759.48"
+                    total_repayment: "39759.48"
+                    start_date: "2024-02-01"
+                    end_date: "2027-02-01"
+                    status: "active"
+                    installments_count: 36
+                    installments_paid: 3
+                    installments_pending: 33
+                    installments_overdue: 0
+                    installments:
+                      - id: 1
+                        installment_number: 1
+                        due_date: "2024-03-01"
+                        amount: "1104.43"
+                        principal_amount: "833.33"
+                        interest_amount: "271.10"
+                        status: "paid"
+                        paid_date: "2024-02-28"
+                      - id: 2
+                        installment_number: 2
+                        due_date: "2024-04-01"
+                        amount: "1104.43"
+                        principal_amount: "839.23"
+                        interest_amount: "265.20"
+                        status: "paid"
+                        paid_date: "2024-03-29"
+                      - id: 3
+                        installment_number: 3
+                        due_date: "2024-05-01"
+                        amount: "1104.43"
+                        principal_amount: "845.17"
+                        interest_amount: "259.26"
+                        status: "pending"
+                        paid_date: null
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /deals/{deal_id}/process-payment/:
+    post:
+      tags:
+        - Payments
+      summary: Process a payment
+      description: |
+        Processes a payment for a deal with automatic updates to:
+        - Payment milestone status
+        - Deal payment progress
+        - Financial terms balance
+        - Vehicle status (if fully paid)
+        - User notifications
+        
+        **Permissions**: Buyer or Admin
+        
+        **Side Effects**:
+        - Updates payment milestone status (partial/paid)
+        - Updates deal financial terms (amount_paid, amount_remaining)
+        - Updates deal status to 'paid' if fully paid
+        - Creates payment record in database
+        - Sends notification to buyer and dealer
+      operationId: processPayment
+      parameters:
+        - name: deal_id
+          in: path
+          required: true
+          description: Unique identifier of the deal
+          schema:
+            type: integer
+            example: 123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessPaymentRequest'
+            examples:
+              partial_payment:
+                summary: Partial payment
+                value:
+                  amount: "5000.00"
+              full_milestone_payment:
+                summary: Full milestone payment
+                value:
+                  amount: "15000.00"
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessPaymentResponse'
+              examples:
+                success:
+                  summary: Successful payment
+                  value:
+                    message: "Payment processed successfully"
+                    payment_id: 456
+                    amount_paid: "5000.00"
+                    new_balance: "30000.00"
+                    payment_progress: "38.89"
+                    milestone_updated:
+                      id: 2
+                      status: "partial"
+                      amount_paid: "5000.00"
+                      amount_remaining: "10000.00"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /deals/{deal_id}/apply-financing/:
+    post:
+      tags:
+        - Financing
+      summary: Apply financing to deal
+      description: |
+        Applies financing to a deal with custom terms including:
+        - Interest rate configuration
+        - Term duration (12-84 months)
+        - Monthly installment calculation
+        - Automatic installment schedule generation
+        
+        **Permissions**: Buyer or Admin
+        
+        **Side Effects**:
+        - Creates FinancingOption record
+        - Generates installment schedule (FinancingInstallment records)
+        - Updates deal status to 'financing_applied'
+        - Sends notification to buyer and dealer
+        
+        **Business Rules**:
+        - Financed amount must be ≤ remaining balance
+        - Interest rate: 0% - 25%
+        - Term: 12-84 months
+        - Cannot apply financing to fully paid deals
+      operationId: applyFinancing
+      parameters:
+        - name: deal_id
+          in: path
+          required: true
+          description: Unique identifier of the deal
+          schema:
+            type: integer
+            example: 123
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyFinancingRequest'
+            examples:
+              standard_financing:
+                summary: Standard 36-month financing
+                value:
+                  financed_amount: "30000.00"
+                  interest_rate: "8.50"
+                  term_months: 36
+              zero_interest:
+                summary: Zero-interest financing
+                value:
+                  financed_amount: "25000.00"
+                  interest_rate: "0.00"
+                  term_months: 24
+      responses:
+        '201':
+          description: Financing applied successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplyFinancingResponse'
+              examples:
+                success:
+                  summary: Successful financing application
+                  value:
+                    message: "Financing applied successfully"
+                    financing_id: 789
+                    financed_amount: "30000.00"
+                    interest_rate: "8.50"
+                    term_months: 36
+                    monthly_payment: "946.40"
+                    total_interest: "4070.40"
+                    total_repayment: "34070.40"
+                    installments_created: 36
+                    first_payment_date: "2024-02-01"
+                    last_payment_date: "2027-02-01"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from `/auth/login/` endpoint.
+        
+        Example: `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+
+  schemas:
+    DealFinancialTerms:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier
+        deal:
+          $ref: '#/components/schemas/DealSummary'
+        total_price:
+          type: string
+          format: decimal
+          description: Total price of the deal
+          example: "45000.00"
+        currency:
+          $ref: '#/components/schemas/Currency'
+        deposit_amount:
+          type: string
+          format: decimal
+          description: Required deposit amount
+          example: "10000.00"
+        deposit_percentage:
+          type: string
+          format: decimal
+          description: Deposit as percentage of total
+          example: "22.22"
+        balance_amount:
+          type: string
+          format: decimal
+          description: Balance after deposit
+          example: "35000.00"
+        amount_paid:
+          type: string
+          format: decimal
+          description: Total amount paid so far
+          example: "15000.00"
+        amount_remaining:
+          type: string
+          format: decimal
+          description: Remaining balance
+          example: "30000.00"
+        payment_progress_percentage:
+          type: string
+          format: decimal
+          description: Payment progress as percentage
+          example: "33.33"
+        payment_milestones:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMilestone'
+
+    PaymentSchedule:
+      type: object
+      properties:
+        deal_id:
+          type: integer
+          description: Associated deal ID
+        total_amount:
+          type: string
+          format: decimal
+          description: Total amount due
+        amount_paid:
+          type: string
+          format: decimal
+          description: Amount paid so far
+        amount_remaining:
+          type: string
+          format: decimal
+          description: Remaining balance
+        payment_progress:
+          type: string
+          format: decimal
+          description: Progress percentage
+        milestones:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMilestone'
+
+    PaymentMilestone:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier
+        milestone_type:
+          type: string
+          enum: [deposit, progress, final, custom]
+          description: Type of milestone
+        name:
+          type: string
+          description: Milestone name
+          example: "Initial Deposit"
+        amount_due:
+          type: string
+          format: decimal
+          description: Amount due for this milestone
+        amount_paid:
+          type: string
+          format: decimal
+          description: Amount paid towards this milestone
+        due_date:
+          type: string
+          format: date
+          description: Payment due date
+        status:
+          type: string
+          enum: [pending, partial, paid, overdue]
+          description: Payment status
+        is_overdue:
+          type: boolean
+          description: Whether payment is overdue
+
+    FinancingOption:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier
+        deal_id:
+          type: integer
+          description: Associated deal ID
+        financed_amount:
+          type: string
+          format: decimal
+          description: Amount being financed
+        interest_rate:
+          type: string
+          format: decimal
+          description: Annual interest rate (%)
+        term_months:
+          type: integer
+          description: Financing term in months
+          minimum: 12
+          maximum: 84
+        monthly_payment:
+          type: string
+          format: decimal
+          description: Calculated monthly payment
+        total_interest:
+          type: string
+          format: decimal
+          description: Total interest over term
+        total_repayment:
+          type: string
+          format: decimal
+          description: Total amount to repay
+        start_date:
+          type: string
+          format: date
+          description: Financing start date
+        end_date:
+          type: string
+          format: date
+          description: Financing end date
+        status:
+          type: string
+          enum: [active, completed, defaulted]
+          description: Financing status
+        installments_count:
+          type: integer
+          description: Total number of installments
+        installments_paid:
+          type: integer
+          description: Number of paid installments
+        installments_pending:
+          type: integer
+          description: Number of pending installments
+        installments_overdue:
+          type: integer
+          description: Number of overdue installments
+        installments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinancingInstallment'
+
+    FinancingInstallment:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier
+        installment_number:
+          type: integer
+          description: Sequential installment number
+        due_date:
+          type: string
+          format: date
+          description: Payment due date
+        amount:
+          type: string
+          format: decimal
+          description: Total installment amount
+        principal_amount:
+          type: string
+          format: decimal
+          description: Principal portion
+        interest_amount:
+          type: string
+          format: decimal
+          description: Interest portion
+        status:
+          type: string
+          enum: [pending, paid, overdue]
+          description: Installment status
+        paid_date:
+          type: string
+          format: date
+          nullable: true
+          description: Date payment was made
+
+    ProcessPaymentRequest:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: string
+          format: decimal
+          description: Payment amount (must be positive)
+          example: "5000.00"
+          pattern: '^\d+(\.\d{1,2})?$'
+
+    ProcessPaymentResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+        payment_id:
+          type: integer
+          description: Created payment ID
+        amount_paid:
+          type: string
+          format: decimal
+          description: Amount that was paid
+        new_balance:
+          type: string
+          format: decimal
+          description: New remaining balance
+        payment_progress:
+          type: string
+          format: decimal
+          description: Updated progress percentage
+        milestone_updated:
+          type: object
+          description: Updated milestone information
+          properties:
+            id:
+              type: integer
+            status:
+              type: string
+            amount_paid:
+              type: string
+              format: decimal
+            amount_remaining:
+              type: string
+              format: decimal
+
+    ApplyFinancingRequest:
+      type: object
+      required:
+        - financed_amount
+        - interest_rate
+        - term_months
+      properties:
+        financed_amount:
+          type: string
+          format: decimal
+          description: Amount to finance (must be ≤ remaining balance)
+          example: "30000.00"
+          pattern: '^\d+(\.\d{1,2})?$'
+        interest_rate:
+          type: string
+          format: decimal
+          description: Annual interest rate (0-25%)
+          example: "8.50"
+          minimum: 0
+          maximum: 25
+        term_months:
+          type: integer
+          description: Financing term in months (12-84)
+          example: 36
+          minimum: 12
+          maximum: 84
+
+    ApplyFinancingResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+        financing_id:
+          type: integer
+          description: Created financing ID
+        financed_amount:
+          type: string
+          format: decimal
+          description: Amount financed
+        interest_rate:
+          type: string
+          format: decimal
+          description: Interest rate applied
+        term_months:
+          type: integer
+          description: Financing term
+        monthly_payment:
+          type: string
+          format: decimal
+          description: Calculated monthly payment
+        total_interest:
+          type: string
+          format: decimal
+          description: Total interest over term
+        total_repayment:
+          type: string
+          format: decimal
+          description: Total amount to repay
+        installments_created:
+          type: integer
+          description: Number of installments created
+        first_payment_date:
+          type: string
+          format: date
+          description: First payment due date
+        last_payment_date:
+          type: string
+          format: date
+          description: Last payment due date
+
+    DealSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        buyer_name:
+          type: string
+        dealer_name:
+          type: string
+        vehicle:
+          $ref: '#/components/schemas/VehicleSummary'
+
+    VehicleSummary:
+      type: object
+      properties:
+        make:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "USD"
+        symbol:
+          type: string
+          example: "$"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        detail:
+          type: string
+          description: Detailed error information
+        code:
+          type: string
+          description: Error code
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Authentication credentials were not provided"
+            code: "not_authenticated"
+
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "You do not have permission to perform this action"
+            code: "permission_denied"
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Deal not found"
+            code: "not_found"
+
+    BadRequestError:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            validation_error:
+              summary: Validation error
+              value:
+                error: "Validation error"
+                detail: "Amount must be a positive number"
+                code: "invalid"
+            business_logic_error:
+              summary: Business logic error
+              value:
+                error: "Cannot apply financing to fully paid deal"
+                detail: "Deal has no remaining balance"
+                code: "invalid_state"

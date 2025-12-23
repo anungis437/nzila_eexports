@@ -8,10 +8,20 @@ from .privacy_views import (
     update_privacy_settings, grant_initial_consent, consent_history,
     data_retention_info, report_data_breach
 )
+from .compliance_views import (
+    DataBreachLogViewSet, ConsentHistoryViewSet,
+    DataRetentionPolicyViewSet, PrivacyImpactAssessmentViewSet
+)
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'2fa', TwoFactorViewSet, basename='two-factor')
+
+# Compliance endpoints (admin-only)
+router.register(r'compliance/breaches', DataBreachLogViewSet, basename='breach')
+router.register(r'compliance/consent-history', ConsentHistoryViewSet, basename='consent')
+router.register(r'compliance/retention-policies', DataRetentionPolicyViewSet, basename='retention')
+router.register(r'compliance/privacy-assessments', PrivacyImpactAssessmentViewSet, basename='pia')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -28,4 +38,7 @@ urlpatterns = [
     path('privacy/consent/history/', consent_history, name='consent_history'),
     path('privacy/retention/', data_retention_info, name='data_retention_info'),
     path('privacy/breach/report/', report_data_breach, name='report_data_breach'),
+    
+    # Dealer Verification Endpoints
+    path('verification/', include('accounts.dealer_verification_urls')),
 ]

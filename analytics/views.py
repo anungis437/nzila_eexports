@@ -29,7 +29,7 @@ def dashboard_stats(request):
         
         # Commission totals
         total_commissions = Commission.objects.aggregate(
-            total=Sum('amount')
+            total=Sum('amount_cad')
         )['total'] or 0
         
         # Active deals
@@ -43,7 +43,7 @@ def dashboard_stats(request):
         
         total_commissions = Commission.objects.filter(
             recipient=user
-        ).aggregate(total=Sum('amount'))['total'] or 0
+        ).aggregate(total=Sum('amount_cad'))['total'] or 0
         
         active_deals = Deal.objects.filter(
             vehicle__dealer=user,

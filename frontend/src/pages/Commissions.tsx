@@ -32,7 +32,7 @@ export default function Commissions() {
   })
 
   // Determine if user is broker or dealer
-  const userType = user?.role === 'seller_broker' ? 'broker' : 'dealer'
+  const userType = user?.role === 'broker' ? 'broker' : 'dealer'
 
   // Filter by search term
   const filteredCommissions = commissions.filter((commission: Commission) => {
@@ -190,10 +190,11 @@ export default function Commissions() {
 
                 {/* Status Filter */}
                 <div className="flex items-center gap-2">
-                  <Filter className="w-5 h-5 text-slate-400" />
+                  <Filter className="w-5 h-5 text-slate-400" aria-hidden="true" />
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
+                    aria-label="Filter commissions by status"
                     className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     {statusOptions.map((opt) => (
@@ -206,10 +207,11 @@ export default function Commissions() {
 
                 {/* Type Filter */}
                 <div className="flex items-center gap-2">
-                  <Percent className="w-5 h-5 text-slate-400" />
+                  <Percent className="w-5 h-5 text-slate-400" aria-hidden="true" />
                   <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
+                    aria-label="Filter commissions by type"
                     className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     {typeOptions.map((opt) => (

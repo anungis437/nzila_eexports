@@ -223,7 +223,7 @@ export default function Payments() {
           <button
             onClick={() => setActiveTab('methods')}
             role="tab"
-            aria-selected={activeTab === 'methods'}
+            aria-selected={activeTab === 'methods' ? 'true' : 'false'}
             aria-controls="payment-methods-panel"
             id="payment-methods-tab"
             tabIndex={activeTab === 'methods' ? 0 : -1}
@@ -244,7 +244,7 @@ export default function Payments() {
           <button
             onClick={() => setActiveTab('payments')}
             role="tab"
-            aria-selected={activeTab === 'payments'}
+            aria-selected={activeTab === 'payments' ? 'true' : 'false'}
             aria-controls="payment-history-panel"
             id="payment-history-tab"
             tabIndex={activeTab === 'payments' ? 0 : -1}
@@ -265,7 +265,7 @@ export default function Payments() {
           <button
             onClick={() => setActiveTab('invoices')}
             role="tab"
-            aria-selected={activeTab === 'invoices'}
+            aria-selected={activeTab === 'invoices' ? 'true' : 'false'}
             aria-controls="invoices-panel"
             id="invoices-tab"
             tabIndex={activeTab === 'invoices' ? 0 : -1}
